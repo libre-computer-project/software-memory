@@ -26,17 +26,29 @@ export function mib(bytes) {
 }
 
 /**
+ * What U-Boot holds at the top of DRAM after relocation, in bytes: the
+ * family's own figure (framebuffer, heap, image, stack and the 16 MiB LMB
+ * keeps below the stack). It differs by family, so there is no global one.
+ */
+export function ubootTop(family) {
+  if (!family || !family.uboot_top || !(family.uboot_top.mib > 0)) {
+    throw new Error(`family ${family && family.id} has no uboot_top`);
+  }
+  return family.uboot_top.mib * MiB;
+}
+
+/**
  * Where the ramdisk may end: below U-Boot's relocated top of DRAM, and below
  * the family's stop when it has one (a SoC region the slot must not reach).
  */
-export function ramdiskEnd(data, dramMiB, family = null) {
-  const top = (dramMiB - data.uboot_top_mib) * MiB;
-  const stop = family && family.ramdisk_stop ? num(family.ramdisk_stop) : Infinity;
+export function ramdiskEnd(data, dramMiB, family) {
+  const top = dramMiB * MiB - ubootTop(family);
+  const stop = family.ramdisk_stop ? num(family.ramdisk_stop) : Infinity;
   return Math.min(top, stop);
 }
 
 /** The ramdisk room on a board of this size, in bytes. */
-export function ramdiskRoom(data, dramMiB, family = null) {
+export function ramdiskRoom(data, dramMiB, family) {
   const last = data.slots[data.slots.length - 1];
   return ramdiskEnd(data, dramMiB, family) - num(last.offset);
 }
@@ -45,7 +57,7 @@ export function ramdiskRoom(data, dramMiB, family = null) {
  * The whole map for one DRAM size, as contiguous segments from offset 0.
  * kind: "low" | "slot" | "spare" | "free" | "uboot".
  */
-export function segments(data, dramMiB, family = null) {
+export function segments(data, dramMiB, family) {
   const total = dramMiB * MiB;
   const out = [];
   const lowEnd = num(data.low_window.end);
@@ -62,14 +74,14 @@ export function segments(data, dramMiB, family = null) {
       label: s.var || "spare", start, end, note: s.holds, grows: !!s.grows });
     at = end;
   }
-  const ubootStart = total - data.uboot_top_mib * MiB;
+  const ubootStart = total - ubootTop(family);
   if (at < ubootStart) {
     out.push({ id: "free", kind: "free", label: "Free for Linux", start: at, end: ubootStart,
-      note: (family && family.ramdisk_stop_note) || "" });
+      note: family.ramdisk_stop_note || "" });
     at = ubootStart;
   }
   out.push({ id: "uboot", kind: "uboot", label: "U-Boot (relocated)", start: at, end: total,
-    note: data.uboot_top_note });
+    note: family.uboot_top.note });
   return out;
 }
 

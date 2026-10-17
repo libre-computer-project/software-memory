@@ -66,8 +66,19 @@ const kStart = num(k.offset), kEnd = kStart + num(k.size);
 arm("decompress buffer inside the kernel slot", cStart >= kStart && cEnd <= kEnd);
 arm("compressed source cannot reach the decompress buffer",
   kStart + num(data.env.kernel_comp_size) <= cStart);
-const room512 = ramdiskRoom(data, 512) / MiB;
-arm("ramdisk room on 512 MiB is 154 MiB", room512 === 154, `got ${room512}`);
+// U-Boot's top is the family's own figure, with a stated basis.
+for (const f of data.families) {
+  const t = f.uboot_top;
+  arm(`${f.id}: uboot_top has mib, basis and note`,
+    t && t.mib > 0 && ["measured", "from the build configuration"].includes(t.basis) && !!t.note);
+  arm(`${f.id}: U-Boot region on the map is uboot_top`,
+    segments(data, f.dram_sizes_mib[0], f).at(-1).end - segments(data, f.dram_sizes_mib[0], f).at(-1).start
+      === t.mib * MiB);
+}
+const aml = data.families.find((f) => f.id === "amlogic");
+const amlRoom512 = ramdiskRoom(data, 512, aml);
+arm("amlogic ramdisk room on 512 MiB = 512 MiB - top - 0x0D600000",
+  amlRoom512 === 512 * MiB - aml.uboot_top.mib * MiB - num(slot("ramdisk_addr_r").offset));
 
 // The limits table is the data, not a second answer.
 const lim = Object.fromEntries(data.limits.map((l) => [l.what, l.mib]));
@@ -75,7 +86,8 @@ arm("limit: raw kernel = kernel slot", lim["Raw kernel (header image_size)"] ===
 arm("limit: compressed file = kernel_comp_size",
   lim["Compressed kernel file"] === num(data.env.kernel_comp_size) / MiB);
 arm("limit: decompressed = buffer", lim["Compressed kernel, decompressed"] === num(comp.size) / MiB);
-arm("limit: initramfs = 512 MiB room", lim["Initramfs, on a 512 MiB board"] === room512);
+arm("limit: initramfs is computed per family, not a stored number",
+  data.limits.some((l) => l.computed === "ramdisk_room" && l.mib === undefined));
 arm("limit: dtb = fdt slot", lim["Device tree with overlays"] === num(slot("fdt_addr_r").size) / MiB);
 arm("limit: script = script slot", lim["Boot script"] === num(slot("scriptaddr").size) / MiB);
 
@@ -111,8 +123,13 @@ arm("must-FIRE: truncated window rejected", !isZeroBased({ lo: Math.min(...vals)
 
 // must-FIRE: a board too small for the map is refused, not drawn.
 let threw = false;
-try { segments(data, 256); } catch (_) { threw = true; }
+try { segments(data, 256, aml); } catch (_) { threw = true; }
 arm("must-FIRE: 256 MiB board refused", threw);
+
+// must-FIRE: a family with no U-Boot top is refused, not drawn with a default.
+threw = false;
+try { segments(data, 1024, { ...aml, uboot_top: undefined }); } catch (_) { threw = true; }
+arm("must-FIRE: family without uboot_top refused", threw);
 
 console.log(`test-map: ${n - fail}/${n} arms pass`);
 process.exit(fail ? 1 : 0);

@@ -109,9 +109,9 @@ function budgetBars(host, rows) {
     const rect = el("rect", { x: x(0), y: y + 3, width: Math.max(x(r.mib) - x(0), 1), height: ROW - 8,
       class: "mm-region" }, svg);
     rect.setAttribute("style", `fill: ${r.color}`);
-    el("title", {}, rect).textContent = `${r.label}: ${r.mib} MiB`;
+    el("title", {}, rect).textContent = `${r.label}: ${mib(r.mib * MiB)} MiB`;
     const val = el("text", { x: x(r.mib) + 6, y: y + 16, class: "mm-value" }, svg);
-    val.textContent = String(r.mib);
+    val.textContent = mib(r.mib * MiB);
   });
 
   const axisY = TOP + rows.length * ROW + 2;
@@ -241,10 +241,18 @@ async function main() {
     const lim = document.getElementById("limits");
     lim.replaceChildren();
     row(lim, ["Payload", "Largest that fits (MiB)"], true);
+    const smallest = Math.min(...fam.dram_sizes_mib);
     for (const l of data.limits) {
-      const v = l.what.startsWith("Initramfs") ? `${l.mib} (${roomMiB} on this board)` : String(l.mib);
-      row(lim, [l.what, v]);
+      if (l.computed === "ramdisk_room") {
+        const floor = ramdiskRoom(data, smallest, fam);
+        row(lim, [`${l.what}, on a ${smallest} MiB board`,
+          `${mib(floor)} (${mib(roomMiB * MiB)} on this board)`]);
+      } else {
+        row(lim, [l.what, String(l.mib)]);
+      }
     }
+    const top = fam.uboot_top;
+    row(lim, ["Held by U-Boot at the top of DRAM", `${mib(top.mib * MiB)} (${top.basis})`]);
 
     const st = document.getElementById("slots");
     st.replaceChildren();
