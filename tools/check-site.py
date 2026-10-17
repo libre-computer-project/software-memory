@@ -23,7 +23,7 @@ from pathlib import Path
 PUBLISHED = ("index.html", "css", "js", "data", "CNAME")
 LINK_OK = re.compile(
     r"^https://((gpio|layout|power)\.hardware\.libre\.computer|memory\.software\.libre\.computer|"
-    r"libre\.computer|www\.libre\.computer)(/|$)"
+    r"education\.libre\.computer|libre\.computer|www\.libre\.computer)(/|$)"
 )
 ASSET = re.compile(r"""(?:src|href)\s*=\s*["']([^"']+)["']""")
 CSS_URL = re.compile(r"""url\(\s*["']?([^"')]+)""")
