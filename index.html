@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Libre Computer Memory Map</title>
+<meta name="description" content="Where U-Boot loads the kernel, device tree, initramfs and boot script on Libre Computer boards, and how much room each one has.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/lc-kit.css">
+<link rel="stylesheet" href="css/style.css">
+<!-- Sets the theme before first paint, so a dark visitor never sees a white
+     flash. Must stay inline and must stay ahead of the stylesheets; the copy
+     is checked by tools/lc-ui-kit/sync.py against HEAD_SNIPPET in lc-kit.js. -->
+<script>try{var p=localStorage.getItem("theme")||"auto";if(p==="dark"||(p==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")}catch(e){}</script>
+</head>
+<body>
+
+<header class="lc-topbar">
+  <div class="lc-brand">
+    <a class="lc-brand-name" href="https://libre.computer">Libre Computer</a>
+    <nav class="lc-sites" aria-label="Libre Computer tools">
+      <a class="lc-site" data-lc-site
+         href="https://gpio.hardware.libre.computer/">GPIO Pinout</a>
+      <a class="lc-site" data-lc-site
+         href="https://layout.hardware.libre.computer/">Layout</a>
+      <a class="lc-site" data-lc-site
+         href="https://power.hardware.libre.computer/">Power</a>
+      <span class="lc-site" aria-current="page">Memory</span>
+    </nav>
+  </div>
+  <div class="lc-controls">
+    <label for="family-select">SoC</label>
+    <select id="family-select" aria-label="Select SoC family"></select>
+    <label for="dram-select">DRAM</label>
+    <select id="dram-select" aria-label="Select DRAM size"></select>
+  </div>
+</header>
+
+<div class="lc-notices" id="notices"></div>
+<script>
+if (location.protocol === "file:") {
+  var host = document.getElementById("notices");
+  var note = document.createElement("p");
+  note.className = "lc-notice";
+  note.setAttribute("role", "status");
+  note.textContent = "Could not load the map data. If you are opening this from a file:// path, serve the directory over HTTP instead — python3 -m http.server.";
+  host.appendChild(note);
+}
+</script>
+
+<main class="mm-main">
+  <section class="mm-section">
+    <h2>The whole map</h2>
+    <p class="mm-lede" id="lede"></p>
+    <div id="map"></div>
+    <ol class="mm-legend" id="map-legend"></ol>
+  </section>
+
+  <section class="mm-section">
+    <h2>Room for each file</h2>
+    <p class="mm-lede">The size of each load slot. The boot files are small next to the kernel and the initramfs, so they get their own scale here rather than a sliver of the map above.</p>
+    <div id="budgets"></div>
+  </section>
+
+  <section class="mm-section" id="fw-section">
+    <h2 id="fw-title">Reserved by firmware</h2>
+    <p class="mm-lede" id="fw-lede"></p>
+    <div id="firmware"></div>
+    <ol class="mm-legend" id="fw-legend"></ol>
+  </section>
+
+  <section class="mm-section">
+    <h2>What fits</h2>
+    <table class="mm-table" id="limits"></table>
+  </section>
+
+  <section class="mm-section">
+    <h2>Addresses</h2>
+    <table class="mm-table" id="slots"></table>
+  </section>
+
+  <section class="mm-section">
+    <h2>Which boot path uses which address</h2>
+    <table class="mm-table" id="mechanisms"></table>
+    <p class="mm-note" id="caveat"></p>
+  </section>
+</main>
+
+<footer class="lc-footer">
+  U-Boot's load addresses on Libre Computer boards ·
+  <a href="https://gpio.hardware.libre.computer/">GPIO pinout</a> ·
+  <a href="https://power.hardware.libre.computer/">Power</a> ·
+  <a href="https://libre.computer">libre.computer</a>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

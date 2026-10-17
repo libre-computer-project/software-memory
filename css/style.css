@@ -1,0 +1,121 @@
+/* Memory map site styles. Shell, theme and colours come from lc-kit.css. */
+
+.mm-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.mm-section {
+  margin: 1.75rem 0;
+}
+
+.mm-section h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.4rem;
+}
+
+.mm-lede,
+.mm-note {
+  color: var(--text-dim);
+  margin: 0 0 0.75rem;
+  max-width: 70ch;
+}
+
+.mm-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.mm-region {
+  stroke: var(--bg);
+  stroke-width: 1;
+}
+
+.mm-overlay {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.mm-in-label {
+  font-size: 13px;
+  fill: var(--text);
+  pointer-events: none;
+}
+
+.mm-axis {
+  stroke: var(--text-dim);
+  stroke-width: 1;
+}
+
+.mm-tick,
+.mm-value {
+  font-size: 12px;
+  fill: var(--text-dim);
+}
+
+.mm-row-label {
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+  fill: var(--text);
+}
+
+.mm-axis-title {
+  font-size: 13px;
+  fill: var(--text);
+}
+
+.mm-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+}
+
+.mm-legend li {
+  margin: 0.2rem 0;
+}
+
+.mm-swatch {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  margin-right: 0.4em;
+  vertical-align: -0.1em;
+}
+
+.mm-range {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+}
+
+.mm-dim {
+  color: var(--text-dim);
+}
+
+.mm-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.92rem;
+}
+
+.mm-table th,
+.mm-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.mm-table th {
+  color: var(--text-dim);
+  font-weight: 600;
+}

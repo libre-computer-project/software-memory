@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "title": "U-Boot DRAM load map",
+  "unit_note": "Every address is an offset from the SoC's DRAM base. A slot's absolute address is base + offset.",
+  "families": [
+    {
+      "id": "amlogic",
+      "name": "Amlogic (S805X, S905X, S905D3, A311D)",
+      "dram_base": "0x00000000",
+      "dram_sizes_mib": [512, 1024, 2048],
+      "firmware": "amlogic-open"
+    },
+    {
+      "id": "rockchip",
+      "name": "Rockchip (RK3328, RK3399)",
+      "dram_base": "0x00000000",
+      "dram_sizes_mib": [1024, 2048],
+      "firmware": "generic"
+    },
+    {
+      "id": "mediatek",
+      "name": "MediaTek (MT8183, MT8365, MT8188)",
+      "dram_base": "0x40000000",
+      "dram_sizes_mib": [512, 1024, 2048],
+      "firmware": "generic",
+      "ramdisk_stop": "0x20000000",
+      "ramdisk_stop_note": "On MT8188 the audio DSP's memory starts at base + 0x20000000, so the ramdisk slot never grows past it"
+    }
+  ],
+  "low_window": {
+    "end": "0x04000000",
+    "label": "Firmware and headroom",
+    "note": "Secure firmware lives in the first 64 MiB. No load slot starts below 0x04000000."
+  },
+  "uboot_top_mib": 144,
+  "uboot_top_note": "After relocation U-Boot occupies the top of DRAM: its image, a 128 MiB heap, the stack and a framebuffer.",
+  "slots": [
+    {
+      "var": "scriptaddr",
+      "offset": "0x04000000",
+      "size": "0x00100000",
+      "holds": "boot.scr, kept mapped while it loads the fdt and the kernel"
+    },
+    {
+      "var": "pxefile_addr_r",
+      "offset": "0x04100000",
+      "size": "0x00100000",
+      "holds": "the PXE / extlinux configuration file"
+    },
+    {
+      "var": "fdtoverlay_addr_r",
+      "offset": "0x04200000",
+      "size": "0x00100000",
+      "holds": "one device-tree overlay, until it is applied"
+    },
+    {
+      "var": "fdt_addr_r",
+      "offset": "0x04300000",
+      "size": "0x00200000",
+      "holds": "the device tree, grown by resize and overlays"
+    },
+    {
+      "var": null,
+      "offset": "0x04500000",
+      "size": "0x00100000",
+      "holds": "spare, so the kernel slot starts on a 2 MiB boundary"
+    },
+    {
+      "var": "kernel_addr_r",
+      "offset": "0x04600000",
+      "size": "0x09000000",
+      "holds": "the kernel booti runs: a raw Image, or a compressed one decompressed back into this slot. 2 MiB-aligned, so an arm64 Image runs in place",
+      "alias": "loadaddr"
+    },
+    {
+      "var": "ramdisk_addr_r",
+      "offset": "0x0D600000",
+      "size": null,
+      "holds": "the initramfs. Guaranteed to the 512 MiB ceiling; grows with DRAM",
+      "grows": true
+    }
+  ],
+  "nested": [
+    {
+      "var": "kernel_comp_addr_r",
+      "offset": "0x08600000",
+      "size": "0x05000000",
+      "in": "kernel_addr_r",
+      "holds": "decompress buffer: a compressed kernel (at most kernel_comp_size, 64 MiB) sits at the bottom of the kernel slot, decompresses here and is copied back down"
+    }
+  ],
+  "env": {
+    "kernel_comp_size": "0x04000000"
+  },
+  "limits": [
+    { "what": "Raw kernel (header image_size)", "mib": 144 },
+    { "what": "Compressed kernel file", "mib": 64 },
+    { "what": "Compressed kernel, decompressed", "mib": 80 },
+    { "what": "Initramfs, on a 512 MiB board", "mib": 154 },
+    { "what": "Device tree with overlays", "mib": 2 },
+    { "what": "Boot script", "mib": 1 }
+  ],
+  "firmware": {
+    "amlogic-open": {
+      "name": "Amlogic open firmware: the reserved block",
+      "end": "0x01000000",
+      "regions": [
+        { "label": "Secure firmware", "short": "Secure firmware", "start": "0x00000000", "end": "0x00E00000", "map": "no-map", "note": "trusted firmware and its staging; on S805X / S905X the first 1 MiB is a read-only ROM mirror" },
+        { "label": "Secure monitor mailboxes", "short": "Mailboxes", "start": "0x00E00000", "end": "0x00F00000", "map": "no-map", "note": "shared buffers between Linux and the secure monitor" },
+        { "label": "ramoops", "short": "ramoops", "start": "0x00F00000", "end": "0x01000000", "map": "mapped", "note": "pstore: the previous boot's console and crash records survive a reboot" }
+      ]
+    }
+  },
+  "mechanisms": [
+    { "how": "PXE / extlinux", "uses": ["pxefile_addr_r", "kernel_addr_r", "ramdisk_addr_r", "fdt_addr_r", "fdtoverlay_addr_r"] },
+    { "how": "boot.scr", "uses": ["scriptaddr"] },
+    { "how": "EFI boot and HTTP boot", "uses": ["kernel_addr_r", "fdt_addr_r"] },
+    { "how": "USB DFU into RAM (alternates script, fdt, kernel, ramdisk)", "uses": ["scriptaddr", "fdt_addr_r", "kernel_addr_r", "ramdisk_addr_r"] },
+    { "how": "booti of a compressed Image", "uses": ["kernel_addr_r", "kernel_comp_addr_r"] },
+    { "how": "Hand-off to Linux", "uses": [], "note": "U-Boot copies the device tree and the initramfs to the top of free memory below itself before starting the kernel" }
+  ],
+  "caveat": "A saved U-Boot environment replaces these defaults. A board that has one keeps the addresses it saved until the environment is reset."
+}
