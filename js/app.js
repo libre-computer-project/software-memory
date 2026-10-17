@@ -22,7 +22,7 @@ const COLOR = {
 };
 /* Firmware regions are coloured one per region, in order, so two regions of
    the same mapping type are still told apart. */
-const FW_COLORS = ["var(--c-jtag)", "var(--c-cec)", "var(--c-gpio)", "var(--c-clk)"];
+const FW_COLORS = ["var(--c-jtag)", "var(--c-cec)", "var(--c-gpio)", "var(--c-clk)", "var(--c-nc)"];
 const colorOf = (seg) => COLOR[seg.id] || COLOR[seg.kind] || "var(--c-misc)";
 
 function el(name, attrs = {}, parent = null) {
@@ -224,7 +224,7 @@ async function main() {
       fwSec.hidden = false;
       document.getElementById("fw-title").textContent = fw.name;
       document.getElementById("fw-lede").textContent =
-        `The first ${mib(fw.total)} MiB, drawn on its own scale. Linux sees these regions as reserved memory.`;
+        `The first ${mib(fw.total)} MiB, drawn on its own scale. Each region's line below says how Linux sees it.`;
       const regs = fw.regions.map((r, i) => ({ ...r, color: FW_COLORS[i % FW_COLORS.length] }));
       addressBar(document.getElementById("firmware"), fw.total, regs.map((r) => ({
         start: r.start, end: r.end, color: r.color, short: r.short || r.label,

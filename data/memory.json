@@ -118,9 +118,11 @@
       "name": "Amlogic open firmware: the reserved block",
       "end": "0x01000000",
       "regions": [
-        { "label": "Secure firmware", "short": "Secure firmware", "start": "0x00000000", "end": "0x00E00000", "map": "no-map", "note": "trusted firmware and its staging; on S805X / S905X the first 1 MiB is a read-only ROM mirror" },
-        { "label": "Secure monitor mailboxes", "short": "Mailboxes", "start": "0x00E00000", "end": "0x00F00000", "map": "no-map", "note": "shared buffers between Linux and the secure monitor" },
-        { "label": "ramoops", "short": "ramoops", "start": "0x00F00000", "end": "0x01000000", "map": "mapped", "note": "pstore: the previous boot's console and crash records survive a reboot" }
+        { "label": "ROM mirror", "short": "ROM", "start": "0x00000000", "end": "0x00100000", "map": "no-map", "note": "on S805X / S905X a read-only mirror of the boot ROM; on S905D3 / A311D held so every family shares one map" },
+        { "label": "Secure monitor (BL31)", "short": "BL31", "start": "0x00100000", "end": "0x00200000", "map": "no-map", "note": "trusted firmware and its staging" },
+        { "label": "Secure monitor mailboxes", "short": "Mailboxes", "start": "0x00200000", "end": "0x00300000", "map": "no-map", "note": "shared buffers between Linux and the secure monitor" },
+        { "label": "ramoops", "short": "ramoops", "start": "0x00300000", "end": "0x00400000", "map": "mapped", "note": "pstore: the previous boot's console and crash records survive a reboot" },
+        { "label": "OP-TEE (optional)", "short": "OP-TEE, optional", "start": "0x00400000", "end": "0x01000000", "map": "no-map only when OP-TEE runs", "note": "reserved for OP-TEE only when the firmware includes it; otherwise ordinary memory for Linux" }
       ]
     }
   },
