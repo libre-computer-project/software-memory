@@ -1,7 +1,13 @@
 /* Memory map site styles. Shell, theme and colours come from lc-kit.css. */
 
+/* The kit's body is a flex column, and a flex item will not shrink below its
+   widest content: without min-width the address tables would widen the whole
+   page past a phone's screen. */
 .mm-main {
+  width: 100%;
   max-width: 1100px;
+  min-width: 0;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 1rem 1.25rem 2rem;
 }
@@ -80,6 +86,7 @@
 
 .mm-legend li {
   margin: 0.2rem 0;
+  overflow-wrap: anywhere;
 }
 
 .mm-swatch {
@@ -118,4 +125,13 @@
 .mm-table th {
   color: var(--text-dim);
   font-weight: 600;
+}
+
+/* On a narrow screen a table keeps its columns and scrolls sideways inside
+   its own box instead of widening the page. */
+@media (max-width: 700px) {
+  .mm-table {
+    display: block;
+    overflow-x: auto;
+  }
 }
