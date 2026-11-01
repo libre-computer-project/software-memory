@@ -37,6 +37,24 @@
   border-radius: 6px;
 }
 
+/* The charts' text is in the drawing's 1000-unit coordinates, so a narrow
+   screen (a phone, the product page's frame) shrank a 13-unit label to a
+   few pixels. Below 720px a chart keeps 900px -- labels about 12px -- and
+   its box scrolls sideways; the list under each chart carries every value
+   in words. The boxes take focus so the keyboard can scroll them. */
+.mm-chart {
+  overflow-x: auto;
+}
+.mm-chart:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (max-width: 720px) {
+  .mm-svg {
+    min-width: 900px;
+  }
+}
+
 .mm-region {
   stroke: var(--bg);
   stroke-width: 1;

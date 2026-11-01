@@ -299,6 +299,18 @@ async function main() {
   dramSel.addEventListener("change", render);
   fillDram(data.families.find((f) => f.id === famSel.value) || data.families[0]);
   render();
+  // A chart box is a Tab stop only while it scrolls (a narrow screen), so
+  // the keyboard can scroll it there and is not stopped on it elsewhere.
+  const scrollStops = () => {
+    for (const box of document.querySelectorAll(".mm-chart")) {
+      if (box.scrollWidth > box.clientWidth) box.tabIndex = 0;
+      else box.removeAttribute("tabindex");
+    }
+  };
+  scrollStops();
+  addEventListener("resize", scrollStops);
+  // after render's own listener: a family change can show or hide a chart
+  famSel.addEventListener("change", scrollStops);
 }
 
 main().catch((e) => {
