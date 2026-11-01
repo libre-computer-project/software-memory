@@ -2,6 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- Scripts from this site only, plus the inline theme snippet below by its
+     sha256 (tools/check-site.py recomputes it from the snippet, so a kit
+     re-sync that changes the snippet fails the check until this is updated).
+     The page's data and images are its own; data: is the kit's logo. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ACy4pj93O7g7s8NBZ36xdNPdeBUZ5qKl4pgUR78Pd7E='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Libre Computer Memory Map</title>
 <meta name="description" content="Where U-Boot loads the kernel, device tree, initramfs and boot script on Libre Computer boards, and how much room each one has.">
@@ -38,16 +44,7 @@
 </header>
 
 <div class="lc-notices" id="notices"></div>
-<script>
-if (location.protocol === "file:") {
-  var host = document.getElementById("notices");
-  var note = document.createElement("p");
-  note.className = "lc-notice";
-  note.setAttribute("role", "status");
-  note.textContent = "Could not load the map data. If you are opening this from a file:// path, serve the directory over HTTP instead — python3 -m http.server.";
-  host.appendChild(note);
-}
-</script>
+<script src="js/file-notice.js"></script>
 
 <main class="mm-main">
   <section class="mm-section">

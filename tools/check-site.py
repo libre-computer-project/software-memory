@@ -7,7 +7,8 @@ Three things a static page can get wrong without any test noticing:
      so the page depends on, and reports visits to, a third party;
   2. it links somewhere that is not ours;
   3. it carries an internal name -- a host, a mesh address, a private path --
-     into a file anyone can fetch.
+     into a file anyone can fetch;
+  4. its Content-Security-Policy no longer matches its inline scripts.
 
 Usage:  tools/check-site.py [--root .]      exit 0 clean, 1 with findings
 """
@@ -15,6 +16,8 @@ Usage:  tools/check-site.py [--root .]      exit 0 clean, 1 with findings
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import re
 import sys
@@ -43,6 +46,28 @@ def published_files(root: Path):
             yield p
         elif p.is_dir():
             yield from sorted(x for x in p.rglob("*") if x.is_file())
+
+
+CSP = re.compile(r'<meta http-equiv="Content-Security-Policy" content="([^"]*)"')
+INLINE_SCRIPT = re.compile(r"<script>(.*?)</script>", re.S)
+
+
+def check_csp(html: str) -> list[str]:
+    """4. The page carries its Content-Security-Policy <meta>, ahead of every
+    script, and the policy lets each inline script run by its sha256 -- and
+    no hash for a script that is gone, which would be a free pass."""
+    m = CSP.search(html)
+    if not m:
+        return ["index.html: no Content-Security-Policy <meta>"]
+    first_script = html.find("<script")
+    if first_script != -1 and m.start() > first_script:
+        return ["index.html: the Content-Security-Policy <meta> comes after a script"]
+    allowed = set(re.findall(r"'sha256-([A-Za-z0-9+/=]+)'", m.group(1)))
+    needed = {base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
+              for s in INLINE_SCRIPT.findall(html)}
+    out = [f"index.html: an inline script (sha256-{h}) the policy does not allow" for h in sorted(needed - allowed)]
+    out += [f"index.html: the policy allows sha256-{h}, which no inline script has" for h in sorted(allowed - needed)]
+    return out
 
 
 def main() -> int:
@@ -75,6 +100,8 @@ def main() -> int:
                     problems.append(f"{rel}: link outside our sites {ref}")
             elif not (root / ref.split("?")[0].split("#")[0]).exists() and f.suffix == ".html":
                 problems.append(f"{rel}: missing local file {ref}")
+
+    problems += check_csp((root / "index.html").read_text())
 
     for p in problems:
         print(p)
