@@ -101,6 +101,23 @@ export function segments(data, dramMiB, family) {
   return out;
 }
 
+/**
+ * Where to put labels beside a vertical bar: each as near its region's
+ * middle (`wanted`, ascending) as it can be, no two closer than `gap`, all
+ * within [lo, hi], in the same order. A small region's label moves off its
+ * slot and a leader line takes it back. The caller sizes the bar so that
+ * wanted.length labels fit (hi - lo >= (n - 1) * gap).
+ */
+export function spreadLabels(wanted, gap, lo, hi) {
+  const ys = wanted.map((v) => Math.min(Math.max(v, lo), hi));
+  for (let i = 1; i < ys.length; i++) ys[i] = Math.max(ys[i], ys[i - 1] + gap);
+  if (ys.length && ys[ys.length - 1] > hi) {
+    ys[ys.length - 1] = hi;
+    for (let i = ys.length - 2; i >= 0; i--) ys[i] = Math.min(ys[i], ys[i + 1] - gap);
+  }
+  return ys;
+}
+
 /** Firmware-block regions for a family, or null when none is drawn. */
 export function firmwareRegions(data, family) {
   const fw = data.firmware[family.firmware];

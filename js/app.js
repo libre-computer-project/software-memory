@@ -1,6 +1,6 @@
 import { mountShell } from "./lc-kit.js";
 import {
-  MiB, num, hex, mib, segments, ramdiskRoom, firmwareRegions, zeroWindow, ticks,
+  MiB, num, hex, mib, segments, ramdiskRoom, firmwareRegions, zeroWindow, ticks, spreadLabels,
 } from "./map.js";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -41,12 +41,69 @@ function html(tag, text, parent, cls) {
   return e;
 }
 
+/* Below this the maps run down the screen (narrow: a phone, the product
+   page's frame); the stylesheet's breakpoint is the same. */
+const NARROW = window.matchMedia("(max-width: 720px)");
+
+/**
+ * The address map on a narrow screen: a bar from the DRAM base at the top
+ * down to `total`, in proportion, and every region's name and size beside
+ * it at full text size. The drawing is in the box's own pixels (viewBox =
+ * its width), so 13 is 13px; labels are spread so none overlap
+ * (spreadLabels), with a leader line back to their slot.
+ */
+function addressColumn(host, total, regions, overlays, label) {
+  const W = Math.max(280, host.clientWidth || 360);
+  const LINE = 20, TOP = 26, AXIS_X = 40, BAR_X = 46, BAR_W = 34, TEXT_X = BAR_X + BAR_W + 22;
+  const items = [
+    ...regions.map((r) => ({ ...r, overlay: false })),
+    ...overlays.map((o) => ({ ...o, overlay: true, short: o.tip.split(" ")[0] })),
+  ].sort((a, b) => (a.start + a.end) - (b.start + b.end));
+  const BAR_H = Math.max(360, items.length * LINE + 20);
+  const H = TOP + BAR_H + 12;
+  const y = (b) => TOP + (b / total) * BAR_H;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, class: "mm-svg mm-svg-col",
+    role: "img", "aria-label": label });
+
+  const title = el("text", { x: 0, y: 15, class: "mm-axis-title" }, svg);
+  title.textContent = "Offset from the DRAM base (MiB), downward";
+  for (const r of regions) {
+    const rect = el("rect", { x: BAR_X, y: y(r.start), width: BAR_W,
+      height: Math.max(y(r.end) - y(r.start), 0.5), class: "mm-region" }, svg);
+    rect.setAttribute("style", `fill: ${r.color}`);
+    el("title", {}, rect).textContent = r.tip;
+  }
+  for (const o of overlays) {
+    const rect = el("rect", { x: BAR_X + 4, y: y(o.start), width: BAR_W - 8,
+      height: y(o.end) - y(o.start), class: "mm-overlay" }, svg);
+    el("title", {}, rect).textContent = o.tip;
+  }
+  el("line", { x1: AXIS_X, x2: AXIS_X, y1: TOP, y2: TOP + BAR_H, class: "mm-axis" }, svg);
+  for (const t of ticks(total / MiB)) {
+    const ty = y(t * MiB);
+    el("line", { x1: AXIS_X - 4, x2: AXIS_X, y1: ty, y2: ty, class: "mm-axis" }, svg);
+    const lab = el("text", { x: AXIS_X - 6, y: ty + 4, class: "mm-tick", "text-anchor": "end" }, svg);
+    lab.textContent = String(t);
+  }
+
+  const mids = items.map((it) => y((it.start + it.end) / 2));
+  const at = spreadLabels(mids, LINE, TOP + 9, TOP + BAR_H);
+  items.forEach((it, i) => {
+    el("polyline", { points: `${BAR_X + BAR_W},${mids[i]} ${TEXT_X - 8},${at[i] - 4} ${TEXT_X - 3},${at[i] - 4}`,
+      class: "mm-leader" }, svg);
+    const t = el("text", { x: TEXT_X, y: at[i], class: "mm-col-label" }, svg);
+    t.textContent = `${it.overlay ? "↳ " : ""}${it.short} · ${mib(it.end - it.start)} MiB`;
+  });
+  host.appendChild(svg);
+}
+
 /**
  * One horizontal address bar from offset 0 to `total` bytes, with a MiB axis.
  * The window is [0, total]: a region's width is its size.
  */
 function addressBar(host, total, regions, overlays = [], label = "") {
   host.replaceChildren();
+  if (NARROW.matches) return addressColumn(host, total, regions, overlays, label);
   const W = 1000, H = 92, X0 = 14, X1 = 972, BAR_Y = 8, BAR_H = 40;
   // role=img hides the rectangles' own titles, so the picture is named whole;
   // the list after it carries every region in words
@@ -99,10 +156,15 @@ function addressBar(host, total, regions, overlays = [], label = "") {
 /** Horizontal bars of size, from 0. */
 function budgetBars(host, rows) {
   host.replaceChildren();
-  const ROW = 26, LABEL_W = 190, X1 = 940, TOP = 6;
+  // narrow: drawn in the box's own pixels, so the text is its real size
+  const W = NARROW.matches ? Math.max(280, host.clientWidth || 360) : 1000;
+  const ROW = 26, TOP = 6;
+  const LABEL_W = NARROW.matches ? Math.min(190, Math.round(W * 0.5)) : 190;
+  // room right of the longest bar for its value ("1656.96")
+  const X1 = W - (NARROW.matches ? 64 : 60);
   const H = TOP + rows.length * ROW + 40;
   // no list follows this one, so its label carries the numbers
-  const svg = el("svg", { viewBox: `0 0 1000 ${H}`, class: "mm-svg", role: "img",
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, class: "mm-svg", role: "img",
     "aria-label": "Room for each file, in MiB: " + rows.map((r) => `${r.label} ${mib(r.mib * MiB)}`).join(", ") });
   const w = zeroWindow(rows.map((r) => r.mib));
   const x = (v) => LABEL_W + ((v - w.lo) / (w.hi - w.lo)) * (X1 - LABEL_W);
@@ -299,18 +361,13 @@ async function main() {
   dramSel.addEventListener("change", render);
   fillDram(data.families.find((f) => f.id === famSel.value) || data.families[0]);
   render();
-  // A chart box is a Tab stop only while it scrolls (a narrow screen), so
-  // the keyboard can scroll it there and is not stopped on it elsewhere.
-  const scrollStops = () => {
-    for (const box of document.querySelectorAll(".mm-chart")) {
-      if (box.scrollWidth > box.clientWidth) box.tabIndex = 0;
-      else box.removeAttribute("tabindex");
-    }
-  };
-  scrollStops();
-  addEventListener("resize", scrollStops);
-  // after render's own listener: a family change can show or hide a chart
-  famSel.addEventListener("change", scrollStops);
+  // The narrow drawing is in the box's own pixels, so a change of width
+  // (a rotated phone, crossing the breakpoint) draws it again.
+  let resizeTimer = 0;
+  addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(render, 120);
+  });
 }
 
 main().catch((e) => {

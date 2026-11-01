@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  MiB, num, segments, ramdiskRoom, firmwareRegions, zeroWindow, isZeroBased, ticks,
+  MiB, num, segments, ramdiskRoom, firmwareRegions, zeroWindow, isZeroBased, ticks, spreadLabels,
 } from "../js/map.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -116,6 +116,26 @@ const fw = firmwareRegions(data, data.families.find((f) => f.id === "amlogic"));
 let fat = 0, fgap = false;
 for (const r of fw.regions) { if (r.start !== fat) fgap = true; fat = r.end; }
 arm("firmware block contiguous from 0", !fgap && fat === fw.total);
+
+// Labels beside the vertical map: in order, never closer than the gap,
+// inside the bar, for every family at every size (the regions' middles).
+const okSpread = (ys, gap, lo, hi) =>
+  ys.every((y, i) => y >= lo - 1e-9 && y <= hi + 1e-9 && (i === 0 || y - ys[i - 1] >= gap - 1e-9));
+for (const f of data.families) {
+  for (const size of f.dram_sizes_mib) {
+    const segs = segments(data, size, f);
+    const H = Math.max(360, segs.length * 20 + 20);
+    const mids = segs.map((s) => 10 + ((s.start + s.end) / 2 / (size * MiB)) * H);
+    arm(`labels spread: ${f.id} at ${size} MiB`, okSpread(spreadLabels(mids, 20, 10, 10 + H), 20, 10, 10 + H));
+  }
+}
+// must-FIRE: labels that all want the same place are pulled apart, and the
+// unspread input would have failed the same check.
+const crowd = [100, 100, 100, 100, 299];
+arm("must-FIRE: crowded labels fail unspread", !okSpread(crowd, 20, 0, 300));
+arm("crowded labels spread", okSpread(spreadLabels(crowd, 20, 0, 300), 20, 0, 300));
+arm("labels pushed off the bottom come back inside",
+  okSpread(spreadLabels([290, 295, 300, 300], 20, 0, 300), 20, 0, 300));
 
 // Every window is zero-based, whatever the values.
 const cases = {
