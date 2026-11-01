@@ -20,6 +20,7 @@
 <script>try{var p=localStorage.getItem("theme")||"auto";if(p==="dark"||(p==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")}catch(e){}</script>
 </head>
 <body class="lc-doc">
+<a class="lc-skip" href="#main">Skip to content</a>
 
 <header class="lc-topbar">
   <div class="lc-brand">
@@ -51,7 +52,8 @@
 <div class="lc-notices" id="notices"></div>
 <script src="js/file-notice.js"></script>
 
-<main class="mm-main">
+<main class="mm-main" id="main">
+  <h1 class="lc-vh">Memory map</h1>
   <section class="mm-section">
     <h2>The whole map</h2>
     <p class="mm-lede" id="lede"></p>
