@@ -68,7 +68,7 @@
 
 .mm-row-label {
   font-size: 13px;
-  font-family: ui-monospace, monospace;
+  font-family: var(--mono);
   fill: var(--text);
 }
 
@@ -89,18 +89,15 @@
   overflow-wrap: anywhere;
 }
 
+/* the kit's .lc-swatch; this page's own: a hairline so the near-white
+   firmware slot shows, and the gap before its name */
 .mm-swatch {
-  display: inline-block;
-  width: 0.9em;
-  height: 0.9em;
   border: 1px solid var(--border);
-  border-radius: 2px;
   margin-right: 0.4em;
-  vertical-align: -0.1em;
 }
 
 .mm-range {
-  font-family: ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 0.85rem;
 }
 

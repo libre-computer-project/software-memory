@@ -131,7 +131,7 @@ function legend(host, items) {
   host.replaceChildren();
   for (const it of items) {
     const li = html("li", null, host);
-    const sw = html("span", null, li, "mm-swatch");
+    const sw = html("span", null, li, "lc-swatch mm-swatch");
     sw.style.background = it.color;
     html("code", it.name, li);
     html("span", ` ${it.range} · ${it.size}`, li, "mm-range");
