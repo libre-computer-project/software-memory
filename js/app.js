@@ -44,10 +44,12 @@ function html(tag, text, parent, cls) {
  * One horizontal address bar from offset 0 to `total` bytes, with a MiB axis.
  * The window is [0, total]: a region's width is its size.
  */
-function addressBar(host, total, regions, overlays = []) {
+function addressBar(host, total, regions, overlays = [], label = "") {
   host.replaceChildren();
   const W = 1000, H = 92, X0 = 14, X1 = 972, BAR_Y = 8, BAR_H = 40;
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, class: "mm-svg", role: "img" });
+  // role=img hides the rectangles' own titles, so the picture is named whole;
+  // the list after it carries every region in words
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, class: "mm-svg", role: "img", "aria-label": label });
   const x = (b) => X0 + (b / total) * (X1 - X0);
 
   for (const r of regions) {
@@ -98,7 +100,9 @@ function budgetBars(host, rows) {
   host.replaceChildren();
   const ROW = 26, LABEL_W = 190, X1 = 940, TOP = 6;
   const H = TOP + rows.length * ROW + 40;
-  const svg = el("svg", { viewBox: `0 0 1000 ${H}`, class: "mm-svg", role: "img" });
+  // no list follows this one, so its label carries the numbers
+  const svg = el("svg", { viewBox: `0 0 1000 ${H}`, class: "mm-svg", role: "img",
+    "aria-label": "Room for each file, in MiB: " + rows.map((r) => `${r.label} ${mib(r.mib * MiB)}`).join(", ") });
   const w = zeroWindow(rows.map((r) => r.mib));
   const x = (v) => LABEL_W + ((v - w.lo) / (w.hi - w.lo)) * (X1 - LABEL_W);
 
@@ -164,6 +168,8 @@ async function main() {
   }
   const params = new URLSearchParams(location.search);
   if (params.get("soc")) famSel.value = params.get("soc");
+  // a ?soc= this page does not know: the picker shows the family drawn
+  if (famSel.selectedIndex < 0) famSel.value = data.families[0].id;
 
   // Only the sizes whose map is plain DRAM from the base are offered; a size
   // the family does not list falls back to its smallest.
@@ -199,7 +205,8 @@ async function main() {
         short: s.kind === "slot" ? s.label.replace(/_addr_r$/, "") : s.label,
         tip: `${s.label}\n${range(s.start, s.end)}\n${mib(s.end - s.start)} MiB`,
       })),
-      [{ start: cS, end: cE, tip: `kernel_comp_addr_r (decompress buffer, inside the kernel slot)\n${range(cS, cE)}\n${mib(cE - cS)} MiB` }]);
+      [{ start: cS, end: cE, tip: `kernel_comp_addr_r (decompress buffer, inside the kernel slot)\n${range(cS, cE)}\n${mib(cE - cS)} MiB` }],
+      `Address map of ${dram} MiB of DRAM from ${hex(base)}; each region is listed below`);
     legend(document.getElementById("map-legend"), [
       ...segs.map((s) => ({
         name: s.label, color: colorOf(s), range: range(s.start, s.end),
@@ -229,7 +236,7 @@ async function main() {
       addressBar(document.getElementById("firmware"), fw.total, regs.map((r) => ({
         start: r.start, end: r.end, color: r.color, short: r.short || r.label,
         tip: `${r.label} (${r.map})\n${range(r.start, r.end)}\n${mib(r.end - r.start)} MiB`,
-      })));
+      })), [], `${fw.name}: the first ${mib(fw.total)} MiB; each region is listed below`);
       legend(document.getElementById("fw-legend"), regs.map((r) => ({
         name: r.label, color: r.color, range: range(r.start, r.end),
         size: `${mib(r.end - r.start)} MiB, ${r.map}`, note: r.note,
