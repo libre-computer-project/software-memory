@@ -48,6 +48,26 @@ for (const size of mtk.dram_sizes_mib) {
     rd.end <= num(mtk.ramdisk_stop));
 }
 
+// A family's RAM top holds: U-Boot ends at it, and what lies past it is
+// drawn as the I/O window, not as RAM U-Boot could use.
+for (const f of data.families.filter((x) => x.ram_top_mib)) {
+  for (const size of f.dram_sizes_mib.filter((s) => s > f.ram_top_mib)) {
+    const segs = segments(data, size, f);
+    const ub = segs.find((s) => s.id === "uboot");
+    const io = segs.at(-1);
+    arm(`${f.id} at ${size} MiB: U-Boot ends at ram_top_mib ${f.ram_top_mib}`,
+      ub.end === f.ram_top_mib * MiB);
+    arm(`${f.id} at ${size} MiB: the I/O window fills the rest`,
+      io.id === "io" && io.start === f.ram_top_mib * MiB && io.end === size * MiB);
+    arm(`${f.id} at ${size} MiB: the ramdisk stays below U-Boot`,
+      segs.find((s) => s.id === "ramdisk_addr_r").end <= ub.start);
+  }
+}
+// must-FIRE: without the cap, a 4 GiB map would put U-Boot in the I/O window.
+const rk = data.families.find((f) => f.id === "rockchip");
+arm("must-FIRE: uncapped 4096 MiB map puts U-Boot past 0xF8000000",
+  segments(data, 4096, { ...rk, ram_top_mib: undefined }).find((s) => s.id === "uboot").end > rk.ram_top_mib * MiB);
+
 // Every family's smallest board fits the map.
 for (const f of data.families) {
   let ok = true;

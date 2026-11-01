@@ -38,11 +38,22 @@ export function ubootTop(family) {
 }
 
 /**
+ * The top of the DRAM U-Boot uses, in bytes: the board's size, or the
+ * family's `ram_top_mib` when the size reaches past it -- on a 4 GiB RK3399
+ * the last 128 MiB below 4 GiB is the SoC's I/O window, and U-Boot relocates
+ * below it (board_get_usable_ram_top).
+ */
+export function usableTop(dramMiB, family) {
+  const cap = family && family.ram_top_mib > 0 ? family.ram_top_mib : Infinity;
+  return Math.min(dramMiB, cap) * MiB;
+}
+
+/**
  * Where the ramdisk may end: below U-Boot's relocated top of DRAM, and below
  * the family's stop when it has one (a SoC region the slot must not reach).
  */
 export function ramdiskEnd(data, dramMiB, family) {
-  const top = dramMiB * MiB - ubootTop(family);
+  const top = usableTop(dramMiB, family) - ubootTop(family);
   const stop = family.ramdisk_stop ? num(family.ramdisk_stop) : Infinity;
   return Math.min(top, stop);
 }
@@ -74,14 +85,19 @@ export function segments(data, dramMiB, family) {
       label: s.var || "spare", start, end, note: s.holds, grows: !!s.grows });
     at = end;
   }
-  const ubootStart = total - ubootTop(family);
+  const usable = usableTop(dramMiB, family);
+  const ubootStart = usable - ubootTop(family);
   if (at < ubootStart) {
     out.push({ id: "free", kind: "free", label: "Free for Linux", start: at, end: ubootStart,
       note: family.ramdisk_stop_note || "" });
     at = ubootStart;
   }
-  out.push({ id: "uboot", kind: "uboot", label: "U-Boot (relocated)", start: at, end: total,
+  out.push({ id: "uboot", kind: "uboot", label: "U-Boot (relocated)", start: at, end: usable,
     note: family.uboot_top.note });
+  if (usable < total) {
+    out.push({ id: "io", kind: "io", label: "Under the I/O window", start: usable, end: total,
+      note: family.ram_top_note || "" });
+  }
   return out;
 }
 

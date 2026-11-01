@@ -19,7 +19,9 @@
       "id": "rockchip",
       "name": "Rockchip (RK3328, RK3399)",
       "dram_base": "0x00000000",
-      "dram_sizes_mib": [1024, 2048],
+      "dram_sizes_mib": [1024, 2048, 4096],
+      "ram_top_mib": 3968,
+      "ram_top_note": "On a 4 GiB board the SoC's I/O window covers the last 128 MiB below 4 GiB, so U-Boot keeps below 0xF8000000 (RK3399's SDRAM_MAX_SIZE, board_get_usable_ram_top). RK3328's limit is higher, 0xFF000000; the map draws RK3399's.",
       "firmware": "generic",
       "uboot_top": {
         "mib": 114,

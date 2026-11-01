@@ -18,6 +18,7 @@ const COLOR = {
   kernel_comp_addr_r: "var(--c-powerlv)",
   ramdisk_addr_r: "var(--c-usb)",
   uboot: "var(--brass)",
+  io: "var(--text-dim)",
   free: "var(--c-nc)",
 };
 /* Firmware regions are coloured one per region, in order, so two regions of
