@@ -191,6 +191,9 @@ async function main() {
     const abs = (off) => hex(base + off);
     const range = (s, e) => `${abs(s)}–${abs(e - 1)}`;
     const q = new URLSearchParams({ soc: fam.id, dram: String(dram) });
+    // inside a product page's frame (the kit's embed mode): keep it so, or a
+    // reload in the frame comes back as the whole tool
+    for (const k of ["embed", "theme"]) if (params.get(k)) q.set(k, params.get(k));
     history.replaceState(null, "", `?${q}`);
 
     document.getElementById("lede").textContent =
