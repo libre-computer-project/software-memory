@@ -9,7 +9,7 @@
       "dram_base": "0x00000000",
       "dram_sizes_mib": [512, 1024, 2048, 4096],
       "ram_top_mib": 3920,
-      "ram_top_note": "4 GiB and 6 GiB boards (S905D3, A311D): the I/O window takes the last 176 MiB below 4 GiB, so U-Boot keeps below 0xF5000000 (get_effective_memsize). On a 6 GiB board the memory above 4 GiB is the kernel's; U-Boot's map is this one.",
+      "ram_top_note": "4 GiB boards (S905D3, A311D): the I/O window takes the last 176 MiB below 4 GiB, so U-Boot keeps below 0xF5000000 (get_effective_memsize).",
       "firmware": "amlogic-open",
       "uboot_top": {
         "mib": 177.04296875,
