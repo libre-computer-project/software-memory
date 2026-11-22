@@ -23,9 +23,11 @@ import re
 import sys
 from pathlib import Path
 
-PUBLISHED = ("index.html", "css", "js", "data", "CNAME")
+PUBLISHED = ("index.html", "css", "js", "data", "CNAME", "robots.txt", "sitemap.xml", "llms.txt")
+ORIGIN = "https://memory.software.libre.computer"
 LINK_OK = re.compile(
-    r"^https://((gpio|layout|power)\.hardware\.libre\.computer|(memory|u-boot|linux)\.software\.libre\.computer|"
+    r"^https://((gpio|layout|power)\.hardware\.libre\.computer|"
+    r"(memory|u-boot|linux|android|zephyr)\.software\.libre\.computer|"
     r"education\.libre\.computer|libre\.computer|www\.libre\.computer)(/|$)"
 )
 ASSET = re.compile(r"""(?:src|href)\s*=\s*["']([^"']+)["']""")
@@ -39,8 +41,9 @@ INTERNAL = [
 ]
 
 
-def published_files(root: Path):
-    for name in PUBLISHED:
+def published_files(root: Path, families=()):
+    # each SoC family's page, <family-id>/index.html (tools/render.mjs)
+    for name in PUBLISHED + tuple(f"{fid}/index.html" for fid in families):
         p = root / name
         if p.is_file():
             yield p
@@ -54,12 +57,32 @@ def main() -> int:
     root = Path(ap.parse_args().root)
     problems = []
 
+    families = []
     try:
-        json.loads((root / "data/memory.json").read_text())
+        families = [f["id"] for f in json.loads((root / "data/memory.json").read_text())["families"]]
     except Exception as e:  # noqa: BLE001 -- any parse failure is the finding
         problems.append(f"data/memory.json: {e}")
 
-    for f in published_files(root):
+    # what a crawler reads: a page per family, each canonical and in the
+    # sitemap and llms.txt, and the home page canonical too
+    sitemap = (root / "sitemap.xml").read_text() if (root / "sitemap.xml").is_file() else ""
+    llms = (root / "llms.txt").read_text() if (root / "llms.txt").is_file() else ""
+    if not (root / "robots.txt").is_file():
+        problems.append("robots.txt is missing (node tools/render.mjs)")
+    pages = [("index.html", f"{ORIGIN}/")] + [(f"{fid}/index.html", f"{ORIGIN}/{fid}/") for fid in families]
+    for rel, url in pages:
+        p = root / rel
+        if not p.is_file():
+            problems.append(f"{rel} is missing (node tools/render.mjs)")
+            continue
+        if f'<link rel="canonical" href="{url}">' not in p.read_text():
+            problems.append(f"{rel}: no canonical {url}")
+        if f"<loc>{url}</loc>" not in sitemap:
+            problems.append(f"sitemap.xml does not list {url}")
+        if rel != "index.html" and f"]({url})" not in llms:
+            problems.append(f"llms.txt does not list {url}")
+
+    for f in published_files(root, families):
         rel = f.relative_to(root)
         text = f.read_text(errors="replace")
         for rx, what in INTERNAL:
@@ -71,12 +94,16 @@ def main() -> int:
                 continue
             if re.match(r"^[a-z]+://|^//", ref):
                 # an <a href> to one of our sites is fine; anything loaded is not
-                is_link = re.search(r"<a\b[^>]*href\s*=\s*[\"']" + re.escape(ref), text)
+                # (a canonical names a page and loads nothing; it must be this site's)
+                is_link = re.search(r"<a\b[^>]*href\s*=\s*[\"']" + re.escape(ref), text) or (
+                    ref.startswith(ORIGIN + "/") and
+                    f'<link rel="canonical" href="{ref}">' in text)
                 if not is_link:
                     problems.append(f"{rel}: off-site asset {ref}")
                 elif not LINK_OK.match(ref):
                     problems.append(f"{rel}: link outside our sites {ref}")
-            elif not (root / ref.split("?")[0].split("#")[0]).exists() and f.suffix == ".html":
+            elif f.suffix == ".html" and not (
+                    (root if ref.startswith("/") else f.parent) / ref.lstrip("/").split("?")[0].split("#")[0]).exists():
                 problems.append(f"{rel}: missing local file {ref}")
 
     for p in problems:

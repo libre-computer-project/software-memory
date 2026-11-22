@@ -1,30 +1,8 @@
 import { mountShell } from "./lc-kit.js";
-import {
-  MiB, num, hex, mib, segments, ramdiskRoom, firmwareRegions, zeroWindow, ticks, spreadLabels,
-} from "./map.js";
+import { MiB, num, hex, mib, zeroWindow, ticks, spreadLabels } from "./map.js";
+import { COLOR, colorOf, dramLabel, family, mainHtml, view } from "./content.js";
 
 const SVG = "http://www.w3.org/2000/svg";
-
-/* Region colours come from the kit's theme variables, set through `style` so a
-   theme change repaints the SVG with no redraw. */
-const COLOR = {
-  low: "var(--bg-sunken)",
-  scriptaddr: "var(--c-uart)",
-  pxefile_addr_r: "var(--c-i2c)",
-  fdtoverlay_addr_r: "var(--c-sdio)",
-  fdt_addr_r: "var(--c-pwm)",
-  spare: "var(--border)",
-  kernel_addr_r: "var(--c-eth)",
-  kernel_comp_addr_r: "var(--c-powerlv)",
-  ramdisk_addr_r: "var(--c-usb)",
-  uboot: "var(--brass)",
-  io: "var(--text-dim)",
-  free: "var(--c-nc)",
-};
-/* Firmware regions are coloured one per region, in order, so two regions of
-   the same mapping type are still told apart. */
-const FW_COLORS = ["var(--c-jtag)", "var(--c-cec)", "var(--c-gpio)", "var(--c-clk)", "var(--c-nc)"];
-const colorOf = (seg) => COLOR[seg.id] || COLOR[seg.kind] || "var(--c-misc)";
 
 function el(name, attrs = {}, parent = null) {
   const e = document.createElementNS(SVG, name);
@@ -194,35 +172,14 @@ function budgetBars(host, rows) {
   host.appendChild(svg);
 }
 
-function legend(host, items) {
-  host.replaceChildren();
-  for (const it of items) {
-    const li = html("li", null, host);
-    const sw = html("span", null, li, "lc-swatch mm-swatch");
-    sw.style.background = it.color;
-    html("code", it.name, li);
-    html("span", ` ${it.range} · ${it.size}`, li, "mm-range");
-    if (it.note) html("span", ` — ${it.note}`, li, "mm-dim");
-  }
-}
-
-function row(table, cells, head = false) {
-  const tr = html("tr", null, table);
-  for (const c of cells) {
-    const td = html(head ? "th" : "td", null, tr);
-    if (c instanceof Node) td.appendChild(c); else td.textContent = c;
-  }
-}
-
-function code(text) {
-  const c = document.createElement("code");
-  c.textContent = text;
-  return c;
-}
+/** The family a generated page is for: <family-id>/index.html, written by
+ * tools/render.mjs, says so on its body (data-soc). Null on the home page. */
+const pageSoc = () => document.body.dataset.soc || null;
 
 async function main() {
   mountShell();
-  const data = await (await fetch("data/memory.json")).json();
+  // beside this module, not the page: a family's page is a directory down
+  const data = await (await fetch(new URL("../data/memory.json", import.meta.url))).json();
   const famSel = document.getElementById("family-select");
   const dramSel = document.getElementById("dram-select");
   for (const f of data.families) {
@@ -230,7 +187,8 @@ async function main() {
     o.value = f.id;
   }
   const params = new URLSearchParams(location.search);
-  if (params.get("soc")) famSel.value = params.get("soc");
+  const wanted = params.get("soc") || pageSoc();
+  if (wanted) famSel.value = wanted;
   // a ?soc= this page does not know: the picker shows the family drawn
   if (famSel.selectedIndex < 0) famSel.value = data.families[0].id;
 
@@ -240,31 +198,29 @@ async function main() {
     const keep = String(dramSel.value || params.get("dram") || "");
     dramSel.replaceChildren();
     for (const s of fam.dram_sizes_mib) {
-      const o = html("option", s >= 1024 ? `${s / 1024} GiB` : `${s} MiB`, dramSel);
+      const o = html("option", dramLabel(s), dramSel);
       o.value = String(s);
     }
     dramSel.value = fam.dram_sizes_mib.map(String).includes(keep) ? keep : String(fam.dram_sizes_mib[0]);
   };
 
   const render = () => {
-    const fam = data.families.find((f) => f.id === famSel.value) || data.families[0];
+    const fam = family(data, famSel.value);
     const dram = Number(dramSel.value);
-    const base = num(fam.dram_base);
-    const abs = (off) => hex(base + off);
-    const range = (s, e) => `${abs(s)}–${abs(e - 1)}`;
-    const q = new URLSearchParams({ soc: fam.id, dram: String(dram) });
+    // a family's own page says the family in its path, so ?soc= is left out
+    // unless it asked for another one
+    const q = new URLSearchParams();
+    if (fam.id !== pageSoc()) q.set("soc", fam.id);
+    q.set("dram", String(dram));
     // inside a product page's frame (the kit's embed mode): keep it so, or a
     // reload in the frame comes back as the whole tool
     for (const k of ["embed", "theme"]) if (params.get(k)) q.set(k, params.get(k));
     history.replaceState(null, "", `?${q}`);
 
-    document.getElementById("lede").textContent =
-      `${fam.name}, ${dram >= 1024 ? dram / 1024 + " GiB" : dram + " MiB"} of DRAM starting at ${hex(base)}. ` +
-      data.unit_note;
-
-    const segs = segments(data, dram, fam);
-    const comp = data.nested.find((n) => n.var === "kernel_comp_addr_r");
-    const cS = num(comp.offset), cE = cS + num(comp.size);
+    // the words and tables: the same function tools/render.mjs writes into
+    // the page, so the served HTML and this redraw are one renderer
+    document.getElementById("main").innerHTML = mainHtml(data, fam, dram);
+    const { base, range, segs, comp, cS, cE, fw, regs, roomMiB } = view(data, fam, dram);
     addressBar(document.getElementById("map"), dram * MiB,
       segs.map((s) => ({
         start: s.start, end: s.end, color: colorOf(s),
@@ -273,16 +229,7 @@ async function main() {
       })),
       [{ start: cS, end: cE, tip: `kernel_comp_addr_r (decompress buffer, inside the kernel slot)\n${range(cS, cE)}\n${mib(cE - cS)} MiB` }],
       `Address map of ${dram} MiB of DRAM from ${hex(base)}; each region is listed below`);
-    legend(document.getElementById("map-legend"), [
-      ...segs.map((s) => ({
-        name: s.label, color: colorOf(s), range: range(s.start, s.end),
-        size: `${mib(s.end - s.start)} MiB`, note: s.note,
-      })),
-      { name: "kernel_comp_addr_r", color: COLOR.kernel_comp_addr_r, range: range(cS, cE),
-        size: `${mib(cE - cS)} MiB`, note: comp.holds },
-    ]);
 
-    const roomMiB = ramdiskRoom(data, dram, fam) / MiB;
     budgetBars(document.getElementById("budgets"), [
       ...data.slots.filter((s) => s.var).map((s) => ({
         label: s.var, color: COLOR[s.var],
@@ -291,75 +238,30 @@ async function main() {
       { label: "kernel_comp_addr_r", color: COLOR.kernel_comp_addr_r, mib: num(comp.size) / MiB },
     ]);
 
-    const fw = firmwareRegions(data, fam);
-    const fwSec = document.getElementById("fw-section");
     if (fw) {
-      fwSec.hidden = false;
-      document.getElementById("fw-title").textContent = fw.name;
-      document.getElementById("fw-lede").textContent =
-        `The first ${mib(fw.total)} MiB, drawn on its own scale. Each region's line below says how Linux sees it.`;
-      const regs = fw.regions.map((r, i) => ({ ...r, color: FW_COLORS[i % FW_COLORS.length] }));
       addressBar(document.getElementById("firmware"), fw.total, regs.map((r) => ({
         start: r.start, end: r.end, color: r.color, short: r.short || r.label,
         tip: `${r.label} (${r.map})\n${range(r.start, r.end)}\n${mib(r.end - r.start)} MiB`,
       })), [], `${fw.name}: the first ${mib(fw.total)} MiB; each region is listed below`);
-      legend(document.getElementById("fw-legend"), regs.map((r) => ({
-        name: r.label, color: r.color, range: range(r.start, r.end),
-        size: `${mib(r.end - r.start)} MiB, ${r.map}`, note: r.note,
-      })));
-    } else {
-      fwSec.hidden = true;
     }
-
-    const lim = document.getElementById("limits");
-    lim.replaceChildren();
-    row(lim, ["Payload", "Largest that fits (MiB)"], true);
-    const smallest = Math.min(...fam.dram_sizes_mib);
-    for (const l of data.limits) {
-      if (l.computed === "ramdisk_room") {
-        const floor = ramdiskRoom(data, smallest, fam);
-        row(lim, [`${l.what}, on a ${smallest} MiB board`,
-          `${mib(floor)} (${mib(roomMiB * MiB)} on this board)`]);
-      } else {
-        row(lim, [l.what, String(l.mib)]);
-      }
-    }
-    const top = fam.uboot_top;
-    row(lim, ["Held by U-Boot at the top of DRAM", `${mib(top.mib * MiB)} (${top.basis})`]);
-
-    const st = document.getElementById("slots");
-    st.replaceChildren();
-    row(st, ["Variable", "Address", "Size (MiB)", "Holds"], true);
-    for (const s of segs.filter((x) => x.kind === "slot")) {
-      const src = data.slots.find((d) => d.var === s.id);
-      const name = src.alias ? `${src.var} = ${src.alias}` : src.var;
-      row(st, [code(name), code(abs(s.start)), mib(s.end - s.start) + (s.grows ? "+" : ""), src.holds]);
-    }
-    row(st, [code(comp.var), code(abs(cS)), mib(cE - cS), comp.holds]);
-    row(st, [code("kernel_comp_size"), code(data.env.kernel_comp_size), "—",
-      "the most compressed input booti reads"]);
-
-    const mt = document.getElementById("mechanisms");
-    mt.replaceChildren();
-    row(mt, ["Boot path", "Addresses it uses"], true);
-    for (const m of data.mechanisms) {
-      const span = document.createElement("span");
-      if (m.uses.length) {
-        m.uses.forEach((u, i) => { if (i) span.append(", "); span.append(code(u)); });
-      } else {
-        span.textContent = m.note;
-      }
-      row(mt, [m.how, span]);
-    }
-    document.getElementById("caveat").textContent = data.caveat;
   };
 
   famSel.addEventListener("change", () => {
-    fillDram(data.families.find((f) => f.id === famSel.value));
+    // on a family's own page another family is another page; ?embed=,
+    // ?theme= and ?dram= go along
+    const here = pageSoc();
+    if (here && famSel.value !== here) {
+      const url = new URL(`../${encodeURIComponent(famSel.value)}/`, location.href);
+      url.search = location.search;
+      url.searchParams.delete("soc");
+      location.assign(url);
+      return;
+    }
+    fillDram(family(data, famSel.value));
     render();
   });
   dramSel.addEventListener("change", render);
-  fillDram(data.families.find((f) => f.id === famSel.value) || data.families[0]);
+  fillDram(family(data, famSel.value));
   render();
   // The narrow drawing is in the box's own pixels, so a change of width
   // (a rotated phone, crossing the breakpoint) draws it again.

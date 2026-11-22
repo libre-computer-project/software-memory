@@ -1,0 +1,11 @@
+# Libre Computer Memory Map
+
+> Where U-Boot loads the kernel, device tree, initramfs and boot script on Libre Computer boards, and how much room each one has.
+
+Part of Libre Computer (https://libre.computer/llms.txt). The map is per SoC family; every page carries its addresses and sizes as HTML tables.
+
+## SoC families
+
+- [Amlogic (S805X, S905X, S905D3, A311D)](https://memory.software.libre.computer/amlogic/)
+- [Rockchip (RK3328, RK3399)](https://memory.software.libre.computer/rockchip/)
+- [MediaTek (MT8183, MT8365, MT8188)](https://memory.software.libre.computer/mediatek/)

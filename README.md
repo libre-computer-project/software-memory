@@ -17,13 +17,36 @@ Companion to the GPIO pinout, the board layout and the power tree.
 - the boot paths that use each address.
 
 `js/map.js` turns it into segments, windows and ticks with no DOM.
-`js/app.js` draws it.
+`js/content.js` turns that into the page's words and tables as HTML, with no
+DOM. `js/app.js` puts that HTML in `<main>` and draws the charts.
+
+## Pages
+
+| URL | Shows |
+|---|---|
+| `/` | the first SoC family; `?soc=<family-id>&dram=<MiB>` picks another |
+| `/<family-id>/` (`/amlogic/`, `/rockchip/`, `/mediatek/`) | that family's map, its tables in the HTML; `?dram=` picks the size |
+
+`?embed=1` (with `?theme=`) works on both, for libre.computer's frame.
+
+## Render
+
+After changing `index.html`, `js/content.js` or `data/memory.json`, run
+
+```
+node tools/render.mjs
+```
+
+and commit what it writes: the map's tables in `index.html` and in each
+family's page, `robots.txt`, `sitemap.xml` and `llms.txt`. A second run
+changes nothing; `tools/test-render.mjs` fails while a page is stale.
 
 ## Checks
 
 ```
 node tools/test-map.mjs        # map invariants; every chart window starts at 0
-python3 tools/check-site.py    # links, assets and names in the published tree
+node tools/test-render.mjs     # the HTML names every region; pages are render.mjs's output
+python3 tools/check-site.py    # links, assets, names, canonicals, sitemap in the published tree
 python3 tools/check-kit.py     # vendored shell kit unchanged
 ```
 

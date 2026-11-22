@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Scripts from this site only, plus the inline theme snippet below by its
+     sha256 (tools/check-kit.py recomputes it from the snippet, so a kit
+     re-sync that changes the snippet fails the check until this is updated).
+     The page's data and images are its own; data: is the kit's logo. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-oHIc59mqgn9ICn5smlJlKAoSorMm9lRvLXPlZJXSqW8='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rockchip (RK3328, RK3399) — Libre Computer Memory Map</title>
+<meta name="description" content="Rockchip (RK3328, RK3399): Where U-Boot loads the kernel, device tree, initramfs and boot script on Libre Computer boards, and how much room each one has.">
+<link rel="canonical" href="https://memory.software.libre.computer/rockchip/">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../css/lc-kit.css">
+<link rel="stylesheet" href="../css/style.css">
+<!-- Sets the theme before first paint, so a dark visitor never sees a white
+     flash. Must stay inline and must stay ahead of the stylesheets; the copy
+     is checked by tools/lc-ui-kit/sync.py against HEAD_SNIPPET in lc-kit.js. -->
+<script>try{var q=new URLSearchParams(location.search),e=q.get("embed")==="1",t=e&&q.get("theme");if(e)document.documentElement.classList.add("lc-embed");var p=t==="light"||t==="dark"?t:localStorage.getItem("theme")||"auto";if(p==="dark"||(p==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")}catch(x){}</script>
+</head>
+<body class="lc-doc" data-soc="rockchip">
+<a class="lc-skip" href="#main">Skip to content</a>
+
+<header class="lc-topbar">
+  <div class="lc-brand">
+    <a class="lc-brand-name" href="https://libre.computer">Libre Computer</a>
+    <nav class="lc-sites" aria-label="Libre Computer sites">
+      <a class="lc-site" href="https://education.libre.computer/">Education</a>
+      <a class="lc-site" href="https://layout.hardware.libre.computer/">Layout</a>
+      <a class="lc-site" href="https://gpio.hardware.libre.computer/">GPIO Pinout</a>
+      <a class="lc-site" href="https://power.hardware.libre.computer/">Power</a>
+      <a class="lc-site" href="/" aria-current="true">Software</a>
+    </nav>
+  </div>
+  <div class="lc-controls">
+    <label for="family-select">SoC</label>
+    <select id="family-select" aria-label="Select SoC family"></select>
+    <label for="dram-select">DRAM</label>
+    <select id="dram-select" aria-label="Select DRAM size"></select>
+  </div>
+</header>
+<nav class="lc-subnav" aria-label="Software">
+    <div class="lc-subnav-sites">
+      <span class="lc-subnav-label">Software</span>
+      <a href="https://u-boot.software.libre.computer/">U-Boot</a>
+      <a href="/" aria-current="true">Memory</a>
+      <a href="https://linux.software.libre.computer/">Linux</a>
+      <a href="https://android.software.libre.computer/">Android</a>
+      <a href="https://zephyr.software.libre.computer/">Zephyr</a>
+    </div>
+</nav>
+
+<div class="lc-notices" id="notices"></div>
+<script src="../js/file-notice.js"></script>
+
+<main class="mm-main" id="main">
+  <h1 class="lc-vh">Memory map: Rockchip (RK3328, RK3399)</h1>
+  <section class="mm-section"><h2>The whole map</h2><p class="mm-lede" id="lede">Rockchip (RK3328, RK3399), 1 GiB of DRAM starting at 0x00000000. Every address is an offset from the SoC&#39;s DRAM base. A slot&#39;s absolute address is base + offset.</p><div id="map" class="mm-chart"></div><ol class="mm-legend" id="map-legend"><li><span class="lc-swatch mm-swatch" style="background: var(--bg-sunken)"></span><code>Firmware and headroom</code><span class="mm-range"> 0x00000000–0x03FFFFFF · 64 MiB</span><span class="mm-dim"> — Secure firmware lives in the first 64 MiB. No load slot starts below 0x04000000.</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--c-uart)"></span><code>scriptaddr</code><span class="mm-range"> 0x04000000–0x040FFFFF · 1 MiB</span><span class="mm-dim"> — boot.scr, kept mapped while it loads the fdt and the kernel</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--c-i2c)"></span><code>pxefile_addr_r</code><span class="mm-range"> 0x04100000–0x041FFFFF · 1 MiB</span><span class="mm-dim"> — the PXE / extlinux configuration file</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--c-sdio)"></span><code>fdtoverlay_addr_r</code><span class="mm-range"> 0x04200000–0x042FFFFF · 1 MiB</span><span class="mm-dim"> — one device-tree overlay, until it is applied</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--c-pwm)"></span><code>fdt_addr_r</code><span class="mm-range"> 0x04300000–0x044FFFFF · 2 MiB</span><span class="mm-dim"> — the device tree, grown by resize and overlays</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--border)"></span><code>spare</code><span class="mm-range"> 0x04500000–0x045FFFFF · 1 MiB</span><span class="mm-dim"> — spare, so the kernel slot starts on a 2 MiB boundary</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--c-eth)"></span><code>kernel_addr_r</code><span class="mm-range"> 0x04600000–0x0D5FFFFF · 144 MiB</span><span class="mm-dim"> — the kernel booti runs: a raw Image, or a compressed one decompressed back into this slot. 2 MiB-aligned, so an arm64 Image runs in place</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--c-usb)"></span><code>ramdisk_addr_r</code><span class="mm-range"> 0x0D600000–0x38DFFFFF · 696 MiB</span><span class="mm-dim"> — the initramfs, booted where it is loaded. Runs up to what U-Boot holds at the top of DRAM, so it grows with DRAM</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--brass)"></span><code>U-Boot (relocated)</code><span class="mm-range"> 0x38E00000–0x3FFFFFFF · 114 MiB</span><span class="mm-dim"> — RK3399, the larger of the two: two 32 MiB framebuffers sized for 4K, a 32 MiB heap, U-Boot itself, and 16 MiB kept below its stack. RK3328 has one framebuffer, about 82 MiB in all.</span></li><li><span class="lc-swatch mm-swatch" style="background: var(--c-powerlv)"></span><code>kernel_comp_addr_r</code><span class="mm-range"> 0x08600000–0x0D5FFFFF · 80 MiB</span><span class="mm-dim"> — decompress buffer: a compressed kernel (at most kernel_comp_size, 64 MiB) sits at the bottom of the kernel slot, decompresses here and is copied back down</span></li></ol></section>
+  <section class="mm-section"><h2>Room for each file</h2><p class="mm-lede">The size of each load slot. The boot files are small next to the kernel and the initramfs, so they get their own scale here rather than a sliver of the map above.</p><div id="budgets" class="mm-chart"></div></section>
+  <section class="mm-section"><h2>What fits</h2><div class="lc-table-scroll"><table class="lc-table" id="limits"><tr><th>Payload</th><th>Largest that fits (MiB)</th></tr><tr><td>Raw kernel (header image_size)</td><td>144</td></tr><tr><td>Compressed kernel file</td><td>64</td></tr><tr><td>Compressed kernel, decompressed</td><td>80</td></tr><tr><td>Initramfs, on a 1024 MiB board</td><td>696 (696 on this board)</td></tr><tr><td>Device tree with overlays</td><td>2</td></tr><tr><td>Boot script</td><td>1</td></tr><tr><td>Held by U-Boot at the top of DRAM</td><td>114 (from the build configuration)</td></tr></table></div></section>
+  <section class="mm-section"><h2>Addresses</h2><div class="lc-table-scroll"><table class="lc-table" id="slots"><tr><th>Variable</th><th>Address</th><th>Size (MiB)</th><th>Holds</th></tr><tr><td><code>scriptaddr</code></td><td><code>0x04000000</code></td><td>1</td><td>boot.scr, kept mapped while it loads the fdt and the kernel</td></tr><tr><td><code>pxefile_addr_r</code></td><td><code>0x04100000</code></td><td>1</td><td>the PXE / extlinux configuration file</td></tr><tr><td><code>fdtoverlay_addr_r</code></td><td><code>0x04200000</code></td><td>1</td><td>one device-tree overlay, until it is applied</td></tr><tr><td><code>fdt_addr_r</code></td><td><code>0x04300000</code></td><td>2</td><td>the device tree, grown by resize and overlays</td></tr><tr><td><code>kernel_addr_r = loadaddr</code></td><td><code>0x04600000</code></td><td>144</td><td>the kernel booti runs: a raw Image, or a compressed one decompressed back into this slot. 2 MiB-aligned, so an arm64 Image runs in place</td></tr><tr><td><code>ramdisk_addr_r</code></td><td><code>0x0D600000</code></td><td>696+</td><td>the initramfs, booted where it is loaded. Runs up to what U-Boot holds at the top of DRAM, so it grows with DRAM</td></tr><tr><td><code>kernel_comp_addr_r</code></td><td><code>0x08600000</code></td><td>80</td><td>decompress buffer: a compressed kernel (at most kernel_comp_size, 64 MiB) sits at the bottom of the kernel slot, decompresses here and is copied back down</td></tr><tr><td><code>kernel_comp_size</code></td><td><code>0x04000000</code></td><td>—</td><td>the most compressed input booti reads</td></tr></table></div></section>
+  <section class="mm-section"><h2>Which boot path uses which address</h2><div class="lc-table-scroll"><table class="lc-table" id="mechanisms"><tr><th>Boot path</th><th>Addresses it uses</th></tr><tr><td>PXE / extlinux</td><td><code>pxefile_addr_r</code>, <code>kernel_addr_r</code>, <code>ramdisk_addr_r</code>, <code>fdt_addr_r</code>, <code>fdtoverlay_addr_r</code></td></tr><tr><td>boot.scr</td><td><code>scriptaddr</code></td></tr><tr><td>EFI boot and HTTP boot</td><td><code>kernel_addr_r</code>, <code>fdt_addr_r</code></td></tr><tr><td>USB DFU into RAM (alternates script, fdt, kernel, ramdisk)</td><td><code>scriptaddr</code>, <code>fdt_addr_r</code>, <code>kernel_addr_r</code>, <code>ramdisk_addr_r</code></td></tr><tr><td>booti of a compressed Image</td><td><code>kernel_addr_r</code>, <code>kernel_comp_addr_r</code></td></tr><tr><td>Hand-off to Linux</td><td>U-Boot copies the device tree to the top of free memory below itself and hands the initramfs over where it was loaded</td></tr></table></div><p class="mm-note" id="caveat">A saved U-Boot environment replaces these defaults. A board that has one keeps the addresses it saved until the environment is reset.</p></section>
+</main>
+
+<footer class="lc-footer">
+  U-Boot's load addresses on Libre Computer boards ·
+  Learn how it works: <a href="https://education.libre.computer/modules/bootloader/">software in DRAM and the memory map</a> ·
+  <a href="https://libre.computer">libre.computer</a>
+</footer>
+
+<script type="module" src="../js/app.js"></script>
+</body>
+</html>
