@@ -27,11 +27,14 @@
   <div class="lc-brand">
     <a class="lc-brand-name" href="https://libre.computer">Libre Computer</a>
     <nav class="lc-sites" aria-label="Libre Computer sites">
+      <a class="lc-site" href="https://libre.computer/products/">Products</a>
+      <a class="lc-site" href="https://libre.computer/downloads/">Downloads</a>
+      <a class="lc-site" href="https://hardware.libre.computer/">Hardware</a>
+      <a class="lc-site" href="https://software.libre.computer/" aria-current="true">Software</a>
       <a class="lc-site" href="https://education.libre.computer/">Education</a>
-      <a class="lc-site" href="https://layout.hardware.libre.computer/">Layout</a>
-      <a class="lc-site" href="https://gpio.hardware.libre.computer/">GPIO Pinout</a>
-      <a class="lc-site" href="https://power.hardware.libre.computer/">Power</a>
-      <a class="lc-site" href="/" aria-current="true">Software</a>
+      <a class="lc-site" href="https://hub.libre.computer/">Support</a>
+      <a class="lc-site" href="https://libre.computer/news/">News</a>
+      <a class="lc-site" href="https://libre.computer/#contact">Contact</a>
     </nav>
   </div>
   <div class="lc-controls">
@@ -44,11 +47,12 @@
 <nav class="lc-subnav" aria-label="Software">
     <div class="lc-subnav-sites">
       <span class="lc-subnav-label">Software</span>
+      <a href="https://software.libre.computer/">Overview</a>
       <a href="https://u-boot.software.libre.computer/">U-Boot</a>
-      <a href="/" aria-current="true">Memory</a>
       <a href="https://linux.software.libre.computer/">Linux</a>
       <a href="https://android.software.libre.computer/">Android</a>
       <a href="https://zephyr.software.libre.computer/">Zephyr</a>
+      <a href="https://memory.software.libre.computer/" aria-current="true">Memory</a>
     </div>
 </nav>
 
@@ -65,10 +69,24 @@
   <section class="mm-section"><h2>Which boot path uses which address</h2><div class="lc-table-scroll"><table class="lc-table" id="mechanisms"><tr><th>Boot path</th><th>Addresses it uses</th></tr><tr><td>PXE / extlinux</td><td><code>pxefile_addr_r</code>, <code>kernel_addr_r</code>, <code>ramdisk_addr_r</code>, <code>fdt_addr_r</code>, <code>fdtoverlay_addr_r</code></td></tr><tr><td>boot.scr</td><td><code>scriptaddr</code></td></tr><tr><td>EFI boot and HTTP boot</td><td><code>kernel_addr_r</code>, <code>fdt_addr_r</code></td></tr><tr><td>USB DFU into RAM (alternates script, fdt, kernel, ramdisk)</td><td><code>scriptaddr</code>, <code>fdt_addr_r</code>, <code>kernel_addr_r</code>, <code>ramdisk_addr_r</code></td></tr><tr><td>booti of a compressed Image</td><td><code>kernel_addr_r</code>, <code>kernel_comp_addr_r</code></td></tr><tr><td>Hand-off to Linux</td><td>U-Boot copies the device tree to the top of free memory below itself and hands the initramfs over where it was loaded</td></tr></table></div><p class="mm-note" id="caveat">A saved U-Boot environment replaces these defaults. A board that has one keeps the addresses it saved until the environment is reset.</p></section>
 </main>
 
+<p class="lc-page-note">U-Boot's load addresses on Libre Computer boards ·
+  Learn how it works: <a href="https://education.libre.computer/modules/bootloader/">software in DRAM and the memory map</a></p>
 <footer class="lc-footer">
-  U-Boot's load addresses on Libre Computer boards ·
-  Learn how it works: <a href="https://education.libre.computer/modules/bootloader/">software in DRAM and the memory map</a> ·
-  <a href="https://libre.computer">libre.computer</a>
+  <nav class="lc-footer-links" aria-label="Libre Computer">
+    <a href="https://libre.computer/products/">Products</a> &middot;
+    <a href="https://libre.computer/downloads/">Downloads</a> &middot;
+    <a href="https://hardware.libre.computer/">Hardware</a> &middot;
+    <a href="https://software.libre.computer/">Software</a> &middot;
+    <a href="https://education.libre.computer/">Education</a> &middot;
+    <a href="https://libre.computer/security/">Security</a> &middot;
+    <a href="https://libre.computer/news/">News</a> &middot;
+    <a href="https://libre.computer/press/">Press</a> &middot;
+    <a href="https://hub.libre.computer/">Support</a> &middot;
+    <a href="https://libre.computer/privacy/">Privacy</a> &middot;
+    <a href="https://libre.computer/terms/">Terms</a>
+  </nav>
+  <p class="lc-footer-social"><a href="https://facebook.com/librecomputer" rel="noopener">Facebook</a> &middot; <a href="https://x.com/LibreComputer" rel="noopener">X</a> &middot; <a href="https://t.me/libre_computer" rel="noopener">Telegram</a> &middot; <a href="https://www.instagram.com/librecomputer/" rel="noopener">Instagram</a> &middot; <a href="https://www.youtube.com/c/LibreComputer" rel="noopener">YouTube</a></p>
+  <p class="lc-footer-company">Libre Computer is an <a href="https://imprecisionsystems.com/" rel="noopener">Imprecision Systems LLC</a> company.</p>
 </footer>
 
 <script type="module" src="../js/app.js"></script>
