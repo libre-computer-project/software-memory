@@ -45,6 +45,18 @@ export function familyPage(home, data, fam) {
     .replace(/(\s(?:src|href)=")(?![a-z]+:|\/|#|\.\.\/)/g, "$1../");
 }
 
+/** The kit's second row as tools/lc-ui-kit/sync.py last wrote it into this
+ *  family page (its trail ends with the family: Memory › Amlogic): kept, so
+ *  a render alone changes nothing; sync.py rewrites it when the kit moves. */
+const KIT_ROW = /[ \t]*<div class="lc-subnav-sites">[\s\S]*?<\/div>/;
+export function withKitRow(old, html) {
+  const kept = old.match(KIT_ROW);
+  return kept && KIT_ROW.test(html) ? html.replace(KIT_ROW, () => kept[0]) : html;
+}
+async function keepKitRow(file, html) {
+  return withKitRow(await readFile(file, "utf8").catch(() => ""), html);
+}
+
 async function main() {
   const data = JSON.parse(await read("data/memory.json"));
   const fams = data.families;
@@ -56,7 +68,8 @@ async function main() {
 
   for (const fam of fams) {
     await mkdir(path.join(ROOT, fam.id), { recursive: true });
-    await writeFile(path.join(ROOT, fam.id, "index.html"), familyPage(home, data, fam));
+    const file = path.join(ROOT, fam.id, "index.html");
+    await writeFile(file, await keepKitRow(file, familyPage(home, data, fam)));
     sitemap.push(`${ORIGIN}/${fam.id}/`);
   }
   // a family that left the data: its page goes too (only pages this wrote)
