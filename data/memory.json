@@ -34,6 +34,7 @@
     {
       "id": "mediatek",
       "name": "MediaTek (MT8183, MT8365, MT8188)",
+      "hidden": true,
       "dram_base": "0x40000000",
       "dram_sizes_mib": [512, 1024, 2048],
       "firmware": "generic",

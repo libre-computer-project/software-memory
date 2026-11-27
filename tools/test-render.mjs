@@ -13,7 +13,8 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { esc, mainHtml, view, family } from "../js/content.js";
+import { existsSync } from "node:fs";
+import { esc, mainHtml, view, family, listedFamilies } from "../js/content.js";
 import { mib } from "../js/map.js";
 import { fill, familyPage, withKitRow, ORIGIN } from "./render.mjs";
 import { withOg } from "./og.mjs";
@@ -65,7 +66,7 @@ const home = read("index.html");
 const first = family(data, null);
 arm("index.html is what render.mjs writes",
   home === fill(home, mainHtml(data, first, first.dram_sizes_mib[0]), `${ORIGIN}/`));
-for (const fam of data.families) {
+for (const fam of listedFamilies(data)) {
   let page = "";
   try { page = read(`${fam.id}/index.html`); } catch { /* missing: fails below */ }
   // (the kit's row, the trail ending with this family, is the page's own;
@@ -74,6 +75,24 @@ for (const fam of data.families) {
     "(run node tools/render.mjs)");
   arm(`${fam.id}/index.html opens that family`, page.includes(` data-soc="${fam.id}"`)
     && page.includes(`<link rel="canonical" href="${ORIGIN}/${fam.id}/">`));
+}
+
+// a hidden family is shown only under ?hidden=1: no page, and nothing a
+// crawler reads names it (the default family is a listed one)
+const hidden = data.families.filter((f) => f.hidden);
+const crawled = ["index.html", "sitemap.xml", "llms.txt",
+  ...listedFamilies(data).map((f) => `${f.id}/index.html`)].map(read).join("\n");
+const names = (text, fam) => text.includes(`/${fam.id}/`) || text.includes(esc(fam.name));
+for (const fam of hidden) {
+  arm(`${fam.id} (hidden) has no page of its own`, !existsSync(join(root, fam.id, "index.html")));
+  arm(`${fam.id} (hidden) is not named in the HTML, sitemap or llms.txt`, !names(crawled, fam));
+  arm(`${fam.id} (hidden) is listed under ?hidden=1`, listedFamilies(data, true).includes(fam));
+}
+arm("the default family is a listed one", !family(data, null).hidden);
+// must-FIRE: the same check sees a hidden family when a crawled file names it
+if (hidden.length) {
+  arm("must-FIRE: a hidden family's page link in llms.txt is caught",
+    names(crawled + `\n- [x](${ORIGIN}/${hidden[0].id}/)`, hidden[0]));
 }
 
 console.log(`test-render: ${n - fail}/${n} arms pass`);

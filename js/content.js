@@ -35,9 +35,17 @@ export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ESC[c]);
 
 export const dramLabel = (m) => (m >= 1024 ? `${m / 1024} GiB` : `${m} MiB`);
 
-/** A family by id, else the first (the page's default). */
+/** The families a visitor is shown. One marked `"hidden": true` (no public
+ *  board uses it yet) is listed only under ?hidden=1, the switch every Libre
+ *  Computer tool uses; it gets no page of its own, and no line in the sitemap
+ *  or llms.txt. */
+export function listedFamilies(data, showHidden = false) {
+  return data.families.filter((f) => showHidden || !f.hidden);
+}
+
+/** A family by id, else the first listed (the page's default). */
 export function family(data, id) {
-  return data.families.find((f) => f.id === id) || data.families[0];
+  return data.families.find((f) => f.id === id) || listedFamilies(data)[0];
 }
 
 /** The DRAM size drawn for `wanted` MiB: it when the family offers it, else its smallest. */

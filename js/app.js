@@ -1,6 +1,6 @@
-import { mountShell } from "./lc-kit.js";
+import { mountShell, showHiddenFlag } from "./lc-kit.js";
 import { MiB, num, hex, mib, zeroWindow, ticks, spreadLabels } from "./map.js";
-import { COLOR, colorOf, dramLabel, family, mainHtml, view } from "./content.js";
+import { COLOR, colorOf, dramLabel, family, listedFamilies, mainHtml, view } from "./content.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -182,15 +182,20 @@ async function main() {
   const data = await (await fetch(new URL("../data/memory.json", import.meta.url))).json();
   const famSel = document.getElementById("family-select");
   const dramSel = document.getElementById("dram-select");
-  for (const f of data.families) {
+  const params = new URLSearchParams(location.search);
+  // a family no public board uses yet is listed only under ?hidden=1
+  const showHidden = params.get("hidden") === "1";
+  const shown = listedFamilies(data, showHidden);
+  for (const f of shown) {
     const o = html("option", f.name, famSel);
     o.value = f.id;
   }
-  const params = new URLSearchParams(location.search);
+  showHiddenFlag(shown.length - listedFamilies(data).length,
+    "?hidden=1: SoC families no public board uses yet are listed");
   const wanted = params.get("soc") || pageSoc();
   if (wanted) famSel.value = wanted;
-  // a ?soc= this page does not know: the picker shows the family drawn
-  if (famSel.selectedIndex < 0) famSel.value = data.families[0].id;
+  // a ?soc= this page does not list: the picker shows the family drawn
+  if (famSel.selectedIndex < 0) famSel.value = shown[0].id;
 
   // Only the sizes whose map is plain DRAM from the base are offered; a size
   // the family does not list falls back to its smallest.
@@ -214,7 +219,7 @@ async function main() {
     q.set("dram", String(dram));
     // inside a product page's frame (the kit's embed mode): keep it so, or a
     // reload in the frame comes back as the whole tool
-    for (const k of ["embed", "theme"]) if (params.get(k)) q.set(k, params.get(k));
+    for (const k of ["embed", "theme", "hidden"]) if (params.get(k)) q.set(k, params.get(k));
     history.replaceState(null, "", `?${q}`);
 
     // the words and tables: the same function tools/render.mjs writes into
@@ -251,9 +256,12 @@ async function main() {
     // ?theme= and ?dram= go along
     const here = pageSoc();
     if (here && famSel.value !== here) {
-      const url = new URL(`../${encodeURIComponent(famSel.value)}/`, location.href);
+      // a hidden family has no page: the home page draws it from ?soc=
+      const hidden = family(data, famSel.value).hidden;
+      const url = new URL(hidden ? "../" : `../${encodeURIComponent(famSel.value)}/`, location.href);
       url.search = location.search;
-      url.searchParams.delete("soc");
+      if (hidden) url.searchParams.set("soc", famSel.value);
+      else url.searchParams.delete("soc");
       location.assign(url);
       return;
     }

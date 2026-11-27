@@ -25,7 +25,14 @@ DOM. `js/app.js` puts that HTML in `<main>` and draws the charts.
 | URL | Shows |
 |---|---|
 | `/` | the first SoC family; `?soc=<family-id>&dram=<MiB>` picks another |
-| `/<family-id>/` (`/amlogic/`, `/rockchip/`, `/mediatek/`) | that family's map, its tables in the HTML; `?dram=` picks the size |
+| `/<family-id>/` (`/amlogic/`, `/rockchip/`) | that family's map, its tables in the HTML; `?dram=` picks the size |
+
+A family marked `"hidden": true` in `data/memory.json` (MediaTek: no public
+board uses it yet) is listed only under `?hidden=1`, the switch every Libre
+Computer tool uses: the home page draws it from `?soc=<family-id>&hidden=1`.
+It has no page of its own and no line in the sitemap or `llms.txt`.
+`data/memory.json` itself still names it, as each tool's data does for its
+hidden boards.
 
 `?embed=1` (with `?theme=`) works on both, for libre.computer's frame.
 

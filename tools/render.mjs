@@ -5,7 +5,8 @@
  * size, and writes what a crawler looks for beside them:
  *
  *   index.html                 the default family's map in <main>, a canonical
- *   <family-id>/index.html     one page per SoC family (data/memory.json)
+ *   <family-id>/index.html     one page per listed SoC family (data/memory.json;
+ *                              a "hidden" one is shown only under ?hidden=1)
  *   robots.txt, sitemap.xml, llms.txt
  *
  *     node tools/render.mjs
@@ -16,7 +17,7 @@
 import { readFile, writeFile, mkdir, readdir, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { esc, mainHtml, view } from "../js/content.js";
+import { esc, listedFamilies, mainHtml, view } from "../js/content.js";
 import { mib, MiB } from "../js/map.js";
 import { sitemapWithLastmod } from "./lastmod.mjs";
 import { stampOg } from "./og.mjs";
@@ -77,7 +78,9 @@ export function familyFact(data, fam) {
 
 async function main() {
   const data = JSON.parse(await read("data/memory.json"));
-  const fams = data.families;
+  // a hidden family is drawn only under ?hidden=1, on the home page: no page,
+  // no sitemap or llms.txt line (and an earlier page of it is removed below)
+  const fams = listedFamilies(data);
 
   // the home page draws the first family at its smallest size, as app.js opens it
   const home = fill(await read("index.html"), mainHtml(data, fams[0], fams[0].dram_sizes_mib[0]), `${ORIGIN}/`);
@@ -90,7 +93,7 @@ async function main() {
     await writeFile(file, await keepKitRow(file, familyPage(home, data, fam)));
     sitemap.push(`${ORIGIN}/${fam.id}/`);
   }
-  // a family that left the data: its page goes too (only pages this wrote)
+  // a family that left the data or is hidden: its page goes too (only pages this wrote)
   for (const d of await readdir(ROOT, { withFileTypes: true })) {
     if (!d.isDirectory() || fams.some((f) => f.id === d.name)) continue;
     const f = path.join(ROOT, d.name, "index.html");

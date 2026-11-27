@@ -59,7 +59,9 @@ def main() -> int:
 
     families = []
     try:
-        families = [f["id"] for f in json.loads((root / "data/memory.json").read_text())["families"]]
+        # a "hidden" family is shown only under ?hidden=1 and has no page
+        families = [f["id"] for f in json.loads((root / "data/memory.json").read_text())["families"]
+                    if not f.get("hidden")]
     except Exception as e:  # noqa: BLE001 -- any parse failure is the finding
         problems.append(f"data/memory.json: {e}")
 
