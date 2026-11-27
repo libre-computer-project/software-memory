@@ -17,6 +17,8 @@ import { readFile, writeFile, mkdir, readdir, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { esc, mainHtml } from "../js/content.js";
+import { sitemapWithLastmod } from "./lastmod.mjs";
+import { stampOg } from "./og.mjs";
 
 export const ORIGIN = "https://memory.software.libre.computer";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -80,9 +82,8 @@ async function main() {
   }
 
   await writeFile(path.join(ROOT, "robots.txt"), `User-agent: *\nContent-Signal: search=yes, ai-input=yes, ai-train=yes\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml\n`);
-  await writeFile(path.join(ROOT, "sitemap.xml"),
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${
-      sitemap.map((u) => `  <url><loc>${esc(u)}</loc></url>`).join("\n")}\n</urlset>\n`);
+  await stampOg(ROOT, ORIGIN, sitemap);
+  await writeFile(path.join(ROOT, "sitemap.xml"), await sitemapWithLastmod(ROOT, ORIGIN, sitemap));
 
   // the data names each family's SoCs (in its name), not the boards that use them
   await writeFile(path.join(ROOT, "llms.txt"), [

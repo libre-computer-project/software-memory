@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://memory.software.libre.computer/</loc></url>
-  <url><loc>https://memory.software.libre.computer/amlogic/</loc></url>
-  <url><loc>https://memory.software.libre.computer/rockchip/</loc></url>
-  <url><loc>https://memory.software.libre.computer/mediatek/</loc></url>
+  <url><loc>https://memory.software.libre.computer/</loc><lastmod>2026-11-26</lastmod></url>
+  <url><loc>https://memory.software.libre.computer/amlogic/</loc><lastmod>2026-11-26</lastmod></url>
+  <url><loc>https://memory.software.libre.computer/rockchip/</loc><lastmod>2026-11-26</lastmod></url>
+  <url><loc>https://memory.software.libre.computer/mediatek/</loc><lastmod>2026-11-26</lastmod></url>
 </urlset>

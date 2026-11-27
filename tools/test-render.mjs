@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { esc, mainHtml, view, family } from "../js/content.js";
 import { mib } from "../js/map.js";
 import { fill, familyPage, withKitRow, ORIGIN } from "./render.mjs";
+import { withOg } from "./og.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (f) => readFileSync(join(root, f), "utf8");
@@ -67,8 +68,9 @@ arm("index.html is what render.mjs writes",
 for (const fam of data.families) {
   let page = "";
   try { page = read(`${fam.id}/index.html`); } catch { /* missing: fails below */ }
-  // (the kit's row, the trail ending with this family, is the page's own)
-  arm(`${fam.id}/index.html is what render.mjs writes`, page === withKitRow(page, familyPage(home, data, fam)),
+  // (the kit's row, the trail ending with this family, is the page's own;
+  // the share tags are drawn from the page's own title and canonical)
+  arm(`${fam.id}/index.html is what render.mjs writes`, page === withOg(withKitRow(page, familyPage(home, data, fam))),
     "(run node tools/render.mjs)");
   arm(`${fam.id}/index.html opens that family`, page.includes(` data-soc="${fam.id}"`)
     && page.includes(`<link rel="canonical" href="${ORIGIN}/${fam.id}/">`));

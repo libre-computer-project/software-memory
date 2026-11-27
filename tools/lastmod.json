@@ -1,0 +1,18 @@
+{
+ "https://memory.software.libre.computer/": {
+  "hash": "9acb5dab02afc7b1",
+  "date": "2026-11-26"
+ },
+ "https://memory.software.libre.computer/amlogic/": {
+  "hash": "9acb5dab02afc7b1",
+  "date": "2026-11-26"
+ },
+ "https://memory.software.libre.computer/rockchip/": {
+  "hash": "c5ef5557c91c2af3",
+  "date": "2026-11-26"
+ },
+ "https://memory.software.libre.computer/mediatek/": {
+  "hash": "ad77a677c79ec1d5",
+  "date": "2026-11-26"
+ }
+}
