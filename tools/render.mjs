@@ -16,7 +16,8 @@
 import { readFile, writeFile, mkdir, readdir, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { esc, mainHtml } from "../js/content.js";
+import { esc, mainHtml, view } from "../js/content.js";
+import { mib, MiB } from "../js/map.js";
 import { sitemapWithLastmod } from "./lastmod.mjs";
 import { stampOg } from "./og.mjs";
 
@@ -59,6 +60,21 @@ async function keepKitRow(file, html) {
   return withKitRow(await readFile(file, "utf8").catch(() => ""), html);
 }
 
+/** One line of what a family's page says, for llms.txt: its DRAM sizes and,
+ *  on the smallest, where U-Boot loads each image and the initramfs's room. */
+export function familyFact(data, fam) {
+  const size = (m) => (m >= 1024 ? `${m / 1024} GiB` : `${m} MiB`);
+  const sizes = fam.dram_sizes_mib;
+  const v = view(data, fam, sizes[0]);
+  const at = (id) => {
+    const s = v.segs.find((x) => x.id === id);
+    return s ? `${id} ${v.abs(s.start)}` : null;
+  };
+  return [`DRAM from ${fam.dram_base}, ${size(sizes[0])} to ${size(sizes[sizes.length - 1])}`,
+    `on a ${size(sizes[0])} board ${["kernel_addr_r", "fdt_addr_r", "ramdisk_addr_r"].map(at).filter(Boolean).join(", ")}`,
+    `${mib(v.roomMiB * MiB)} MiB of room for the initramfs`].join("; ");
+}
+
 async function main() {
   const data = JSON.parse(await read("data/memory.json"));
   const fams = data.families;
@@ -92,7 +108,7 @@ async function main() {
     "Part of Libre Computer (https://libre.computer/llms.txt). The map is per SoC family; " +
       "every page carries its addresses and sizes as HTML tables.", "",
     "## SoC families", "",
-    ...fams.map((f) => `- [${f.name}](${ORIGIN}/${f.id}/)`), "",
+    ...fams.map((f) => `- [${f.name}](${ORIGIN}/${f.id}/): ${familyFact(data, f)}`), "",
   ].join("\n"));
 
   console.log(`rendered index.html, ${fams.length} family pages (${fams.map((f) => f.id).join(", ")}), robots.txt, sitemap.xml, llms.txt`);

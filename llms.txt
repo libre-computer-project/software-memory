@@ -6,6 +6,6 @@ Part of Libre Computer (https://libre.computer/llms.txt). The map is per SoC fam
 
 ## SoC families
 
-- [Amlogic (S805X, S905X, S905D3, A311D)](https://memory.software.libre.computer/amlogic/)
-- [Rockchip (RK3328, RK3399)](https://memory.software.libre.computer/rockchip/)
-- [MediaTek (MT8183, MT8365, MT8188)](https://memory.software.libre.computer/mediatek/)
+- [Amlogic (S805X, S905X, S905D3, A311D)](https://memory.software.libre.computer/amlogic/): DRAM from 0x00000000, 512 MiB to 4 GiB; on a 512 MiB board kernel_addr_r 0x04600000, fdt_addr_r 0x04300000, ramdisk_addr_r 0x0D600000; 120.96 of room for the initramfs
+- [Rockchip (RK3328, RK3399)](https://memory.software.libre.computer/rockchip/): DRAM from 0x00000000, 1 GiB to 4 GiB; on a 1 GiB board kernel_addr_r 0x04600000, fdt_addr_r 0x04300000, ramdisk_addr_r 0x0D600000; 696 of room for the initramfs
+- [MediaTek (MT8183, MT8365, MT8188)](https://memory.software.libre.computer/mediatek/): DRAM from 0x40000000, 512 MiB to 2 GiB; on a 512 MiB board kernel_addr_r 0x44600000, fdt_addr_r 0x44300000, ramdisk_addr_r 0x4D600000; 184 of room for the initramfs
